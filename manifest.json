@@ -2,21 +2,21 @@
   "name": "Speed Reader",
   "short_name": "Speed Reader",
   "description": "Train your brain to read at lightning speed",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "https://jsergiomartins.github.io/speed-reader/",
+  "scope": "https://jsergiomartins.github.io/speed-reader/",
   "display": "standalone",
   "background_color": "#0a0e1a",
   "theme_color": "#00ff9d",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "./icon-192.png",
+      "src": "https://jsergiomartins.github.io/speed-reader/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "./icon-512.png",
+      "src": "https://jsergiomartins.github.io/speed-reader/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
