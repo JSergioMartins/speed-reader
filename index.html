@@ -32,6 +32,24 @@
             --highlight: #fbbf24;
         }
         
+        /* Day Theme */
+        body.day-theme {
+            --bg-dark: #f5f1e8;
+            --bg-medium: #ffffff;
+            --bg-light: #fafaf8;
+            --accent: #2563eb;
+            --accent-dim: #1d4ed8;
+            --text-primary: #1a1a1a;
+            --text-secondary: #6b7280;
+            --highlight: #f59e0b;
+        }
+        
+        body.day-theme::before {
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(37, 99, 235, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(245, 158, 11, 0.03) 0%, transparent 50%);
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -79,6 +97,34 @@
             text-align: center;
             margin-bottom: 3rem;
             animation: fadeInDown 0.8s ease;
+            position: relative;
+        }
+        
+        .theme-toggle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--bg-medium);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 2rem;
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .theme-toggle:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        
+        .theme-icon {
+            font-size: 1.2rem;
         }
         
         h1 {
@@ -452,6 +498,10 @@
 <body>
     <div class="container">
         <header>
+            <button class="theme-toggle" id="themeToggle">
+                <span class="theme-icon" id="themeIcon">🌙</span>
+                <span id="themeText">Night</span>
+            </button>
             <h1>SPEED READER</h1>
             <p class="subtitle">Train your brain to read at lightning speed</p>
         </header>
@@ -478,7 +528,7 @@
             <div class="control-group">
                 <label>Reading Speed</label>
                 <div class="slider-container">
-                    <input type="range" id="wpmSlider" min="100" max="1000" value="300" step="50">
+                    <input type="range" id="wpmSlider" min="10" max="1000" value="300" step="10">
                     <span class="wpm-display" id="wpmDisplay">300 WPM</span>
                 </div>
             </div>
@@ -508,9 +558,11 @@
                 this.isPlaying = false;
                 this.wpm = 300;
                 this.intervalId = null;
+                this.theme = 'night'; // 'night' or 'day'
                 
                 this.initElements();
                 this.initEventListeners();
+                this.loadTheme();
             }
             
             initElements() {
@@ -525,6 +577,9 @@
                 this.progressBar = document.getElementById('progressBar');
                 this.progressInfo = document.getElementById('progressInfo');
                 this.statusContainer = document.getElementById('statusContainer');
+                this.themeToggle = document.getElementById('themeToggle');
+                this.themeIcon = document.getElementById('themeIcon');
+                this.themeText = document.getElementById('themeText');
             }
             
             initEventListeners() {
@@ -542,6 +597,9 @@
                 this.playPauseBtn.addEventListener('click', () => this.togglePlayPause());
                 this.rewindBtn.addEventListener('click', () => this.rewind());
                 this.clearBtn.addEventListener('click', () => this.clear());
+                
+                // Theme toggle
+                this.themeToggle.addEventListener('click', () => this.toggleTheme());
                 
                 // File upload
                 this.uploadArea.addEventListener('click', () => this.fileInput.click());
@@ -817,120 +875,81 @@
             }
             
             async processMOBI(file) {
-                this.showStatus('Extracting text from MOBI...', 'info');
+                this.showStatus('Extracting text from MOBI... (this may take a moment)', 'info');
                 
                 try {
                     const arrayBuffer = await file.arrayBuffer();
-                    const dataView = new DataView(arrayBuffer);
+                    const bytes = new Uint8Array(arrayBuffer);
                     
-                    // MOBI files often contain HTML in their records
-                    // Try to find HTML content markers
-                    let htmlContent = '';
-                    const decoder = new TextDecoder('utf-8', { fatal: false });
-                    
-                    // Search for HTML content in chunks
-                    const chunkSize = 4096;
-                    for (let offset = 0; offset < arrayBuffer.byteLength; offset += chunkSize) {
-                        const end = Math.min(offset + chunkSize * 10, arrayBuffer.byteLength);
-                        const chunk = arrayBuffer.slice(offset, end);
-                        const text = decoder.decode(chunk);
-                        
-                        // Look for HTML tags
-                        if (text.includes('<html') || text.includes('<body') || text.includes('<p>')) {
-                            htmlContent += text;
-                        }
-                    }
+                    // MOBI files have a PalmDB header followed by MOBI header
+                    // We'll extract text by looking for HTML/text sections
                     
                     let extractedText = '';
-                    const chapters = [];
+                    let currentText = '';
+                    let inText = false;
                     
-                    if (htmlContent.length > 100) {
-                        // Parse as HTML
-                        const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
+                    // More aggressive text extraction
+                    for (let i = 0; i < bytes.length; i++) {
+                        const byte = bytes[i];
                         
-                        // Remove scripts and styles
-                        doc.querySelectorAll('script, style').forEach(el => el.remove());
-                        
-                        // Try to find chapters by headings
-                        const headings = doc.querySelectorAll('h1, h2, h3');
-                        let currentWordIndex = 0;
-                        
-                        if (headings.length > 0) {
-                            // Process content by chapters
-                            headings.forEach((heading, idx) => {
-                                let chapterText = '';
-                                let currentElement = heading.nextElementSibling;
-                                
-                                // Collect text until next heading
-                                while (currentElement && !['H1', 'H2', 'H3'].includes(currentElement.tagName)) {
-                                    chapterText += (currentElement.textContent || '') + ' ';
-                                    currentElement = currentElement.nextElementSibling;
-                                }
-                                
-                                const cleanText = chapterText.replace(/\s+/g, ' ').trim();
-                                if (cleanText.length > 50) {
-                                    const chapterWords = cleanText.split(' ').filter(w => w.length > 0);
-                                    chapters.push({
-                                        title: heading.textContent.trim() || `Chapter ${idx + 1}`,
-                                        startIndex: currentWordIndex,
-                                        endIndex: currentWordIndex + chapterWords.length - 1
-                                    });
-                                    extractedText += cleanText + ' ';
-                                    currentWordIndex += chapterWords.length;
-                                }
-                            });
+                        // Check for readable ASCII characters
+                        if (byte >= 32 && byte <= 126) {
+                            currentText += String.fromCharCode(byte);
+                            inText = true;
+                        } else if (byte === 10 || byte === 13) {
+                            // Newline characters
+                            currentText += ' ';
                         } else {
-                            // No clear chapter structure, just extract all text
-                            extractedText = doc.body.textContent || doc.body.innerText || '';
-                        }
-                    } else {
-                        // Fallback: extract plain text
-                        const uint8Array = new Uint8Array(arrayBuffer);
-                        let buffer = '';
-                        
-                        for (let i = 0; i < uint8Array.length; i++) {
-                            const char = uint8Array[i];
-                            
-                            if ((char >= 32 && char <= 126) || char === 10 || char === 13) {
-                                buffer += String.fromCharCode(char);
-                            } else {
-                                if (buffer.length > 15) {
-                                    extractedText += buffer + ' ';
+                            // Non-text byte
+                            if (inText && currentText.length > 20) {
+                                // Check if this looks like real text (has spaces and common words)
+                                const wordCount = currentText.split(/\s+/).filter(w => w.length > 0).length;
+                                const hasSpaces = currentText.includes(' ');
+                                
+                                if (wordCount > 3 && hasSpaces) {
+                                    extractedText += currentText + ' ';
                                 }
-                                buffer = '';
                             }
-                        }
-                        
-                        if (buffer.length > 15) {
-                            extractedText += buffer;
+                            currentText = '';
+                            inText = false;
                         }
                     }
                     
-                    // Clean up the extracted text
+                    // Add any remaining text
+                    if (currentText.length > 20) {
+                        extractedText += currentText;
+                    }
+                    
+                    // Clean up extracted text
                     extractedText = extractedText
-                        .replace(/<[^>]*>/g, '') // Remove any remaining HTML tags
+                        .replace(/<[^>]*>/g, ' ') // Remove HTML tags
                         .replace(/&nbsp;/g, ' ')
                         .replace(/&[a-z]+;/gi, ' ')
-                        .replace(/[^\x20-\x7E\n\r]/g, '') // Remove non-printable
-                        .replace(/\s+/g, ' ')
+                        .replace(/\b[A-Z]{4,}\b/g, '') // Remove all-caps words (often metadata)
+                        .replace(/https?:\/\/[^\s]+/g, '') // Remove URLs
+                        .replace(/[^\x20-\x7E]/g, ' ') // Remove non-printable
+                        .replace(/\s+/g, ' ') // Normalize whitespace
+                        .replace(/\b\w\b/g, '') // Remove single letters (often junk)
                         .trim();
                     
-                    if (extractedText.length < 100) {
-                        throw new Error('Could not extract meaningful text from MOBI file');
+                    // Try to detect chapters in the text
+                    this.detectChapters(extractedText);
+                    
+                    if (extractedText.length < 500) {
+                        throw new Error('Could not extract enough text from MOBI file. The file may be DRM-protected or corrupted.');
                     }
                     
-                    this.chapters = chapters;
                     this.loadText(extractedText);
                     
-                    if (chapters.length > 0) {
+                    if (this.chapters.length > 0) {
                         this.showChapterSelector();
-                        this.showStatus(`Loaded: ${file.name} (${chapters.length} chapters, ${this.words.length} words)`, 'info');
+                        this.showStatus(`Loaded: ${file.name} (${this.chapters.length} chapters, ${this.words.length} words)`, 'info');
                     } else {
-                        this.showStatus(`Loaded: ${file.name} (${this.words.length} words) - No chapter structure detected`, 'info');
+                        this.showStatus(`Loaded: ${file.name} (${this.words.length} words) - MOBI support is experimental. For best results, convert to EPUB.`, 'info');
                     }
                 } catch (error) {
                     console.error('MOBI parsing error:', error);
-                    this.showStatus('Error reading MOBI file. Try converting to EPUB for better results.', 'error');
+                    this.showStatus(`Error: ${error.message}. Try converting MOBI to EPUB using Calibre for better results.`, 'error');
                 }
             }
             
@@ -1019,6 +1038,36 @@
                 this.wordDisplay.classList.remove('word-enter');
                 void this.wordDisplay.offsetWidth; // Trigger reflow
                 this.wordDisplay.classList.add('word-enter');
+            }
+            
+            toggleTheme() {
+                this.theme = this.theme === 'night' ? 'day' : 'night';
+                this.applyTheme();
+                this.saveTheme();
+            }
+            
+            applyTheme() {
+                if (this.theme === 'day') {
+                    document.body.classList.add('day-theme');
+                    this.themeIcon.textContent = '☀️';
+                    this.themeText.textContent = 'Day';
+                } else {
+                    document.body.classList.remove('day-theme');
+                    this.themeIcon.textContent = '🌙';
+                    this.themeText.textContent = 'Night';
+                }
+            }
+            
+            saveTheme() {
+                localStorage.setItem('speedReaderTheme', this.theme);
+            }
+            
+            loadTheme() {
+                const savedTheme = localStorage.getItem('speedReaderTheme');
+                if (savedTheme) {
+                    this.theme = savedTheme;
+                }
+                this.applyTheme();
             }
             
             showChapterSelector() {
