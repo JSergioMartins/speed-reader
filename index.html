@@ -459,8 +459,8 @@
         <div class="upload-area" id="uploadArea">
             <div class="upload-icon">📖</div>
             <div class="upload-text">Drop your book here or click to browse</div>
-            <div class="upload-hint">Supports TXT, PDF, and EPUB files</div>
-            <input type="file" id="fileInput" accept=".txt,.pdf,.epub">
+            <div class="upload-hint">Supports TXT, PDF, EPUB, and MOBI files</div>
+            <input type="file" id="fileInput" accept=".txt,.pdf,.epub,.mobi">
         </div>
         
         <div id="statusContainer"></div>
@@ -495,6 +495,8 @@
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/epub.js/0.3.93/epub.min.js"></script>
     <script>
         // Initialize PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -602,9 +604,11 @@
                     } else if (fileName.endsWith('.pdf')) {
                         await this.processPDF(file);
                     } else if (fileName.endsWith('.epub')) {
-                        this.showStatus('EPUB support coming soon! Please use TXT or PDF files.', 'error');
+                        await this.processEPUB(file);
+                    } else if (fileName.endsWith('.mobi')) {
+                        await this.processMOBI(file);
                     } else {
-                        this.showStatus('Unsupported file type. Please use TXT or PDF.', 'error');
+                        this.showStatus('Unsupported file type. Please use TXT, PDF, EPUB, or MOBI.', 'error');
                     }
                 } catch (error) {
                     console.error('Error processing file:', error);
@@ -634,6 +638,95 @@
                 
                 this.loadText(fullText);
                 this.showStatus(`Loaded: ${file.name} (${this.words.length} words from ${pdf.numPages} pages)`, 'info');
+            }
+            
+            async processEPUB(file) {
+                this.showStatus('Extracting text from EPUB...', 'info');
+                
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const book = ePub(arrayBuffer);
+                    
+                    await book.ready;
+                    
+                    let fullText = '';
+                    const spine = await book.loaded.spine;
+                    
+                    // Get all chapter items
+                    for (let item of spine.items) {
+                        try {
+                            const doc = await book.load(item.href);
+                            const parser = new DOMParser();
+                            const htmlDoc = parser.parseFromString(doc, 'text/html');
+                            const text = htmlDoc.body.textContent || htmlDoc.body.innerText || '';
+                            fullText += text + ' ';
+                        } catch (err) {
+                            console.warn('Could not load chapter:', item.href, err);
+                        }
+                    }
+                    
+                    if (fullText.trim().length === 0) {
+                        throw new Error('No text could be extracted from EPUB');
+                    }
+                    
+                    this.loadText(fullText);
+                    this.showStatus(`Loaded: ${file.name} (${this.words.length} words)`, 'info');
+                } catch (error) {
+                    console.error('EPUB parsing error:', error);
+                    this.showStatus('Error reading EPUB file. Please try another file.', 'error');
+                }
+            }
+            
+            async processMOBI(file) {
+                this.showStatus('Extracting text from MOBI...', 'info');
+                
+                try {
+                    // MOBI files are more complex - they're essentially a proprietary format
+                    // We'll try to extract text by reading as binary and looking for text patterns
+                    const arrayBuffer = await file.arrayBuffer();
+                    const uint8Array = new Uint8Array(arrayBuffer);
+                    
+                    // Convert to string and try to extract readable text
+                    let text = '';
+                    let buffer = '';
+                    
+                    for (let i = 0; i < uint8Array.length; i++) {
+                        const char = uint8Array[i];
+                        
+                        // Printable ASCII characters and common punctuation
+                        if ((char >= 32 && char <= 126) || char === 10 || char === 13) {
+                            buffer += String.fromCharCode(char);
+                        } else {
+                            // When we hit a non-printable character, save the buffer if it's substantial
+                            if (buffer.length > 10) {
+                                text += buffer + ' ';
+                            }
+                            buffer = '';
+                        }
+                    }
+                    
+                    // Add remaining buffer
+                    if (buffer.length > 10) {
+                        text += buffer;
+                    }
+                    
+                    // Clean up the extracted text
+                    text = text
+                        .replace(/<[^>]*>/g, '') // Remove any HTML tags
+                        .replace(/[^\x20-\x7E\n\r]/g, '') // Remove non-printable characters
+                        .replace(/\s+/g, ' ') // Normalize whitespace
+                        .trim();
+                    
+                    if (text.length < 100) {
+                        throw new Error('Could not extract meaningful text from MOBI file');
+                    }
+                    
+                    this.loadText(text);
+                    this.showStatus(`Loaded: ${file.name} (${this.words.length} words) - Note: MOBI parsing is basic, some formatting may be lost`, 'info');
+                } catch (error) {
+                    console.error('MOBI parsing error:', error);
+                    this.showStatus('Error reading MOBI file. Try converting to EPUB or PDF for better results.', 'error');
+                }
             }
             
             loadText(text) {
