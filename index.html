@@ -496,7 +496,6 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/epub.js/0.3.93/epub.min.js"></script>
     <script>
         // Initialize PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -504,6 +503,7 @@
         class SpeedReader {
             constructor() {
                 this.words = [];
+                this.chapters = []; // Store chapters: [{title, startIndex, endIndex}]
                 this.currentIndex = 0;
                 this.isPlaying = false;
                 this.wpm = 300;
@@ -616,10 +616,70 @@
                 }
             }
             
+            detectChapters(text) {
+                this.chapters = [];
+                
+                // Common chapter patterns
+                const patterns = [
+                    /^(Chapter|CHAPTER)\s+(\d+|[IVXLCDM]+)[\s:.\-](.*)$/gm,
+                    /^(Part|PART)\s+(\d+|[IVXLCDM]+)[\s:.\-](.*)$/gm,
+                    /^(\d+)\.\s+(.+)$/gm,
+                    /^(Prologue|PROLOGUE|Epilogue|EPILOGUE|Introduction|INTRODUCTION)[\s:.\-]?(.*)$/gm
+                ];
+                
+                let matches = [];
+                
+                // Find all chapter headings
+                patterns.forEach(pattern => {
+                    let match;
+                    while ((match = pattern.exec(text)) !== null) {
+                        matches.push({
+                            index: match.index,
+                            title: match[0].trim().substring(0, 100), // Limit title length
+                            fullMatch: match[0]
+                        });
+                    }
+                });
+                
+                // Sort by position in text
+                matches.sort((a, b) => a.index - b.index);
+                
+                if (matches.length === 0) return;
+                
+                // Calculate word positions for each chapter
+                const words = text.replace(/\s+/g, ' ').trim().split(' ').filter(w => w.length > 0);
+                
+                matches.forEach((match, idx) => {
+                    // Count words before this chapter
+                    const textBeforeChapter = text.substring(0, match.index);
+                    const wordsBeforeChapter = textBeforeChapter.replace(/\s+/g, ' ').trim().split(' ').filter(w => w.length > 0).length;
+                    
+                    const startIndex = wordsBeforeChapter;
+                    const endIndex = idx < matches.length - 1 
+                        ? text.substring(0, matches[idx + 1].index).replace(/\s+/g, ' ').trim().split(' ').filter(w => w.length > 0).length - 1
+                        : words.length - 1;
+                    
+                    if (endIndex > startIndex) {
+                        this.chapters.push({
+                            title: match.title,
+                            startIndex: startIndex,
+                            endIndex: endIndex
+                        });
+                    }
+                });
+            }
+            
             async processTXT(file) {
                 const text = await file.text();
+                this.detectChapters(text);
                 this.loadText(text);
-                this.showStatus(`Loaded: ${file.name} (${this.words.length} words)`, 'info');
+                
+                if (this.chapters.length > 0) {
+                    this.showChapterSelector();
+                    this.showStatus(`Loaded: ${file.name} (${this.chapters.length} chapters, ${this.words.length} words)`, 'info');
+                } else {
+                    this.showStatus(`Loaded: ${file.name} (${this.words.length} words)`, 'info');
+                }
             }
             
             async processPDF(file) {
@@ -645,35 +705,114 @@
                 
                 try {
                     const arrayBuffer = await file.arrayBuffer();
-                    const book = ePub(arrayBuffer);
+                    const zip = await JSZip.loadAsync(arrayBuffer);
                     
-                    await book.ready;
+                    // Read content.opf to get reading order
+                    let contentOpf = null;
+                    let opfPath = null;
                     
-                    let fullText = '';
-                    const spine = await book.loaded.spine;
-                    
-                    // Get all chapter items
-                    for (let item of spine.items) {
-                        try {
-                            const doc = await book.load(item.href);
-                            const parser = new DOMParser();
-                            const htmlDoc = parser.parseFromString(doc, 'text/html');
-                            const text = htmlDoc.body.textContent || htmlDoc.body.innerText || '';
-                            fullText += text + ' ';
-                        } catch (err) {
-                            console.warn('Could not load chapter:', item.href, err);
+                    // Find the .opf file
+                    for (let filename in zip.files) {
+                        if (filename.endsWith('.opf')) {
+                            opfPath = filename;
+                            const opfContent = await zip.files[filename].async('string');
+                            contentOpf = new DOMParser().parseFromString(opfContent, 'text/xml');
+                            break;
                         }
                     }
                     
-                    if (fullText.trim().length === 0) {
+                    if (!contentOpf) {
+                        throw new Error('Invalid EPUB: No .opf file found');
+                    }
+                    
+                    // Get base path for the OPF file
+                    const basePath = opfPath.substring(0, opfPath.lastIndexOf('/') + 1);
+                    
+                    // Get spine items (reading order)
+                    const spineItems = contentOpf.querySelectorAll('spine itemref');
+                    const manifest = contentOpf.querySelectorAll('manifest item');
+                    
+                    // Create a map of id to href
+                    const manifestMap = {};
+                    manifest.forEach(item => {
+                        manifestMap[item.getAttribute('id')] = item.getAttribute('href');
+                    });
+                    
+                    let allText = '';
+                    const chapters = [];
+                    let currentWordIndex = 0;
+                    
+                    // Process each spine item in order
+                    for (let i = 0; i < spineItems.length; i++) {
+                        const idref = spineItems[i].getAttribute('idref');
+                        const href = manifestMap[idref];
+                        
+                        if (!href) continue;
+                        
+                        // Construct full path
+                        const fullPath = basePath + href.split('#')[0];
+                        
+                        // Get the file
+                        const htmlFile = zip.files[fullPath];
+                        if (!htmlFile) continue;
+                        
+                        try {
+                            const htmlContent = await htmlFile.async('string');
+                            const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
+                            
+                            // Remove script and style tags
+                            doc.querySelectorAll('script, style').forEach(el => el.remove());
+                            
+                            // Try to find chapter title
+                            let chapterTitle = `Chapter ${i + 1}`;
+                            const h1 = doc.querySelector('h1');
+                            const h2 = doc.querySelector('h2');
+                            const title = doc.querySelector('title');
+                            
+                            if (h1 && h1.textContent.trim()) {
+                                chapterTitle = h1.textContent.trim();
+                            } else if (h2 && h2.textContent.trim()) {
+                                chapterTitle = h2.textContent.trim();
+                            } else if (title && title.textContent.trim()) {
+                                chapterTitle = title.textContent.trim();
+                            }
+                            
+                            // Extract text
+                            const text = doc.body.textContent || doc.body.innerText || '';
+                            const cleanText = text
+                                .replace(/\s+/g, ' ')
+                                .trim();
+                            
+                            if (cleanText.length > 50) { // Only add substantial chapters
+                                const chapterWords = cleanText.split(' ').filter(w => w.length > 0);
+                                const startIndex = currentWordIndex;
+                                const endIndex = startIndex + chapterWords.length - 1;
+                                
+                                chapters.push({
+                                    title: chapterTitle,
+                                    startIndex: startIndex,
+                                    endIndex: endIndex
+                                });
+                                
+                                allText += cleanText + ' ';
+                                currentWordIndex += chapterWords.length;
+                            }
+                        } catch (err) {
+                            console.warn('Could not process chapter:', fullPath, err);
+                        }
+                    }
+                    
+                    if (allText.trim().length === 0) {
                         throw new Error('No text could be extracted from EPUB');
                     }
                     
-                    this.loadText(fullText);
-                    this.showStatus(`Loaded: ${file.name} (${this.words.length} words)`, 'info');
+                    this.chapters = chapters;
+                    this.loadText(allText);
+                    this.showChapterSelector();
+                    this.showStatus(`Loaded: ${file.name} (${this.chapters.length} chapters, ${this.words.length} words)`, 'info');
                 } catch (error) {
                     console.error('EPUB parsing error:', error);
-                    this.showStatus('Error reading EPUB file. Please try another file.', 'error');
+                    this.showStatus(`Error reading EPUB: ${error.message}`, 'error');
                 }
             }
             
@@ -681,51 +820,117 @@
                 this.showStatus('Extracting text from MOBI...', 'info');
                 
                 try {
-                    // MOBI files are more complex - they're essentially a proprietary format
-                    // We'll try to extract text by reading as binary and looking for text patterns
                     const arrayBuffer = await file.arrayBuffer();
-                    const uint8Array = new Uint8Array(arrayBuffer);
+                    const dataView = new DataView(arrayBuffer);
                     
-                    // Convert to string and try to extract readable text
-                    let text = '';
-                    let buffer = '';
+                    // MOBI files often contain HTML in their records
+                    // Try to find HTML content markers
+                    let htmlContent = '';
+                    const decoder = new TextDecoder('utf-8', { fatal: false });
                     
-                    for (let i = 0; i < uint8Array.length; i++) {
-                        const char = uint8Array[i];
+                    // Search for HTML content in chunks
+                    const chunkSize = 4096;
+                    for (let offset = 0; offset < arrayBuffer.byteLength; offset += chunkSize) {
+                        const end = Math.min(offset + chunkSize * 10, arrayBuffer.byteLength);
+                        const chunk = arrayBuffer.slice(offset, end);
+                        const text = decoder.decode(chunk);
                         
-                        // Printable ASCII characters and common punctuation
-                        if ((char >= 32 && char <= 126) || char === 10 || char === 13) {
-                            buffer += String.fromCharCode(char);
-                        } else {
-                            // When we hit a non-printable character, save the buffer if it's substantial
-                            if (buffer.length > 10) {
-                                text += buffer + ' ';
-                            }
-                            buffer = '';
+                        // Look for HTML tags
+                        if (text.includes('<html') || text.includes('<body') || text.includes('<p>')) {
+                            htmlContent += text;
                         }
                     }
                     
-                    // Add remaining buffer
-                    if (buffer.length > 10) {
-                        text += buffer;
+                    let extractedText = '';
+                    const chapters = [];
+                    
+                    if (htmlContent.length > 100) {
+                        // Parse as HTML
+                        const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
+                        
+                        // Remove scripts and styles
+                        doc.querySelectorAll('script, style').forEach(el => el.remove());
+                        
+                        // Try to find chapters by headings
+                        const headings = doc.querySelectorAll('h1, h2, h3');
+                        let currentWordIndex = 0;
+                        
+                        if (headings.length > 0) {
+                            // Process content by chapters
+                            headings.forEach((heading, idx) => {
+                                let chapterText = '';
+                                let currentElement = heading.nextElementSibling;
+                                
+                                // Collect text until next heading
+                                while (currentElement && !['H1', 'H2', 'H3'].includes(currentElement.tagName)) {
+                                    chapterText += (currentElement.textContent || '') + ' ';
+                                    currentElement = currentElement.nextElementSibling;
+                                }
+                                
+                                const cleanText = chapterText.replace(/\s+/g, ' ').trim();
+                                if (cleanText.length > 50) {
+                                    const chapterWords = cleanText.split(' ').filter(w => w.length > 0);
+                                    chapters.push({
+                                        title: heading.textContent.trim() || `Chapter ${idx + 1}`,
+                                        startIndex: currentWordIndex,
+                                        endIndex: currentWordIndex + chapterWords.length - 1
+                                    });
+                                    extractedText += cleanText + ' ';
+                                    currentWordIndex += chapterWords.length;
+                                }
+                            });
+                        } else {
+                            // No clear chapter structure, just extract all text
+                            extractedText = doc.body.textContent || doc.body.innerText || '';
+                        }
+                    } else {
+                        // Fallback: extract plain text
+                        const uint8Array = new Uint8Array(arrayBuffer);
+                        let buffer = '';
+                        
+                        for (let i = 0; i < uint8Array.length; i++) {
+                            const char = uint8Array[i];
+                            
+                            if ((char >= 32 && char <= 126) || char === 10 || char === 13) {
+                                buffer += String.fromCharCode(char);
+                            } else {
+                                if (buffer.length > 15) {
+                                    extractedText += buffer + ' ';
+                                }
+                                buffer = '';
+                            }
+                        }
+                        
+                        if (buffer.length > 15) {
+                            extractedText += buffer;
+                        }
                     }
                     
                     // Clean up the extracted text
-                    text = text
-                        .replace(/<[^>]*>/g, '') // Remove any HTML tags
-                        .replace(/[^\x20-\x7E\n\r]/g, '') // Remove non-printable characters
-                        .replace(/\s+/g, ' ') // Normalize whitespace
+                    extractedText = extractedText
+                        .replace(/<[^>]*>/g, '') // Remove any remaining HTML tags
+                        .replace(/&nbsp;/g, ' ')
+                        .replace(/&[a-z]+;/gi, ' ')
+                        .replace(/[^\x20-\x7E\n\r]/g, '') // Remove non-printable
+                        .replace(/\s+/g, ' ')
                         .trim();
                     
-                    if (text.length < 100) {
+                    if (extractedText.length < 100) {
                         throw new Error('Could not extract meaningful text from MOBI file');
                     }
                     
-                    this.loadText(text);
-                    this.showStatus(`Loaded: ${file.name} (${this.words.length} words) - Note: MOBI parsing is basic, some formatting may be lost`, 'info');
+                    this.chapters = chapters;
+                    this.loadText(extractedText);
+                    
+                    if (chapters.length > 0) {
+                        this.showChapterSelector();
+                        this.showStatus(`Loaded: ${file.name} (${chapters.length} chapters, ${this.words.length} words)`, 'info');
+                    } else {
+                        this.showStatus(`Loaded: ${file.name} (${this.words.length} words) - No chapter structure detected`, 'info');
+                    }
                 } catch (error) {
                     console.error('MOBI parsing error:', error);
-                    this.showStatus('Error reading MOBI file. Try converting to EPUB or PDF for better results.', 'error');
+                    this.showStatus('Error reading MOBI file. Try converting to EPUB for better results.', 'error');
                 }
             }
             
@@ -796,9 +1001,11 @@
             clear() {
                 this.pause();
                 this.words = [];
+                this.chapters = [];
                 this.currentIndex = 0;
                 this.wordDisplay.textContent = 'Ready to read';
                 this.updateProgress();
+                this.hideChapterSelector();
                 this.fileInput.value = '';
                 this.showStatus('Cleared. Load a new book to start.', 'info');
             }
@@ -812,6 +1019,57 @@
                 this.wordDisplay.classList.remove('word-enter');
                 void this.wordDisplay.offsetWidth; // Trigger reflow
                 this.wordDisplay.classList.add('word-enter');
+            }
+            
+            showChapterSelector() {
+                // Remove existing selector if any
+                this.hideChapterSelector();
+                
+                if (this.chapters.length === 0) return;
+                
+                // Create chapter selector UI
+                const selectorHTML = `
+                    <div id="chapterSelector" class="control-group" style="animation: fadeIn 0.3s ease;">
+                        <label>Jump to Chapter</label>
+                        <select id="chapterSelect" style="width: 100%; padding: 0.75rem; background: var(--bg-dark); 
+                                color: var(--text-primary); border: 1px solid rgba(255,255,255,0.1); 
+                                border-radius: 0.5rem; font-family: 'Crimson Pro', serif; font-size: 1rem;
+                                cursor: pointer;">
+                            <option value="-1">-- Select a chapter --</option>
+                            ${this.chapters.map((ch, idx) => 
+                                `<option value="${idx}">${ch.title}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                `;
+                
+                // Insert before the controls group
+                const controlsDiv = document.querySelector('.controls');
+                const firstControlGroup = controlsDiv.querySelector('.control-group');
+                firstControlGroup.insertAdjacentHTML('beforebegin', selectorHTML);
+                
+                // Add event listener
+                document.getElementById('chapterSelect').addEventListener('change', (e) => {
+                    const chapterIndex = parseInt(e.target.value);
+                    if (chapterIndex >= 0 && chapterIndex < this.chapters.length) {
+                        this.jumpToChapter(chapterIndex);
+                    }
+                });
+            }
+            
+            hideChapterSelector() {
+                const existing = document.getElementById('chapterSelector');
+                if (existing) existing.remove();
+            }
+            
+            jumpToChapter(chapterIndex) {
+                if (chapterIndex < 0 || chapterIndex >= this.chapters.length) return;
+                
+                this.pause();
+                this.currentIndex = this.chapters[chapterIndex].startIndex;
+                this.updateProgress();
+                this.displayWord();
+                this.showStatus(`Jumped to: ${this.chapters[chapterIndex].title}`, 'info');
             }
             
             updateProgress() {

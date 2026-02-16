@@ -1,4 +1,4 @@
-const CACHE_NAME = 'speed-reader-v2';
+const CACHE_NAME = 'speed-reader-v3';
 const urlsToCache = [
   './',
   './index.html',
@@ -6,8 +6,7 @@ const urlsToCache = [
   'https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=JetBrains+Mono:wght@500;700&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/epub.js/0.3.93/epub.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
 ];
 
 // Install event - cache resources
