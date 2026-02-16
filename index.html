@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed Reader</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Train your brain to read at lightning speed with Speed Reader">
+    <meta name="theme-color" content="#00ff9d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Speed Reader">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- iOS Icons -->
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=JetBrains+Mono:wght@500;700&display=swap');
+        
+        :root {
+            --bg-dark: #0a0e1a;
+            --bg-medium: #151b2e;
+            --bg-light: #1f2937;
+            --accent: #00ff9d;
+            --accent-dim: #00cc7d;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --highlight: #fbbf24;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Crimson Pro', serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Animated gradient background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 157, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(251, 191, 36, 0.05) 0%, transparent 50%);
+            animation: gradientShift 20s ease infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-5%, -5%) rotate(5deg); }
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease;
+        }
+        
+        h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--highlight) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Main Reading Area */
+        .reader-container {
+            background: var(--bg-medium);
+            border-radius: 1.5rem;
+            padding: 3rem;
+            margin-bottom: 2rem;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 1s ease 0.2s both;
+        }
+        
+        .reader-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0.3;
+        }
+        
+        #word-display {
+            font-family: 'Crimson Pro', serif;
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.2;
+            color: var(--text-primary);
+            min-height: 1.2em;
+        }
+        
+        .word-enter {
+            animation: wordFade 0.15s ease;
+        }
+        
+        @keyframes wordFade {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+        
+        /* Controls Panel */
+        .controls {
+            background: var(--bg-light);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            animation: fadeIn 1s ease 0.4s both;
+        }
+        
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        label {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent);
+            margin-bottom: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg-dark);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            box-shadow: 0 0 0 4px rgba(0, 255, 157, 0.2);
+            transition: all 0.2s ease;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--highlight);
+            box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.2);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 0 4px rgba(0, 255, 157, 0.2);
+            transition: all 0.2s ease;
+        }
+        
+        .wpm-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent);
+            min-width: 100px;
+            text-align: right;
+        }
+        
+        /* Buttons */
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            font-family: 'JetBrains Mono', monospace;
+            padding: 0.875rem 1.75rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        button:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg-dark);
+        }
+        
+        .btn-primary:hover {
+            background: var(--highlight);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 255, 157, 0.3);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-medium);
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--bg-dark);
+            border-color: var(--accent);
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+        }
+        
+        /* File Upload */
+        .upload-area {
+            background: var(--bg-dark);
+            border: 2px dashed rgba(0, 255, 157, 0.3);
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+            animation: fadeIn 1s ease 0.6s both;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--accent);
+            background: rgba(0, 255, 157, 0.05);
+        }
+        
+        .upload-area.drag-over {
+            border-color: var(--highlight);
+            background: rgba(251, 191, 36, 0.1);
+            transform: scale(1.02);
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        .upload-text {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .upload-hint {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+        
+        /* Progress Bar */
+        .progress-container {
+            background: var(--bg-dark);
+            border-radius: 0.5rem;
+            height: 8px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--highlight));
+            width: 0%;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 10px var(--accent);
+        }
+        
+        .progress-info {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 0.5rem;
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Status Messages */
+        .status-message {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .status-info {
+            background: rgba(0, 255, 157, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(0, 255, 157, 0.2);
+        }
+        
+        .status-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .reader-container {
+                padding: 2rem 1rem;
+                min-height: 300px;
+            }
+            
+            #word-display {
+                font-size: clamp(2rem, 10vw, 4rem);
+            }
+            
+            .controls {
+                padding: 1.5rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SPEED READER</h1>
+            <p class="subtitle">Train your brain to read at lightning speed</p>
+        </header>
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📖</div>
+            <div class="upload-text">Drop your book here or click to browse</div>
+            <div class="upload-hint">Supports TXT, PDF, and EPUB files</div>
+            <input type="file" id="fileInput" accept=".txt,.pdf,.epub">
+        </div>
+        
+        <div id="statusContainer"></div>
+        
+        <div class="reader-container">
+            <div id="word-display">Ready to read</div>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="progress-info" id="progressInfo">0 / 0 words</div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>Reading Speed</label>
+                <div class="slider-container">
+                    <input type="range" id="wpmSlider" min="100" max="1000" value="300" step="50">
+                    <span class="wpm-display" id="wpmDisplay">300 WPM</span>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>Controls</label>
+                <div class="button-group">
+                    <button class="btn-primary" id="playPauseBtn">▶ Play</button>
+                    <button class="btn-secondary" id="rewindBtn">⏮ Restart</button>
+                    <button class="btn-danger" id="clearBtn">✕ Clear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Initialize PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        
+        class SpeedReader {
+            constructor() {
+                this.words = [];
+                this.currentIndex = 0;
+                this.isPlaying = false;
+                this.wpm = 300;
+                this.intervalId = null;
+                
+                this.initElements();
+                this.initEventListeners();
+            }
+            
+            initElements() {
+                this.wordDisplay = document.getElementById('word-display');
+                this.wpmSlider = document.getElementById('wpmSlider');
+                this.wpmDisplay = document.getElementById('wpmDisplay');
+                this.playPauseBtn = document.getElementById('playPauseBtn');
+                this.rewindBtn = document.getElementById('rewindBtn');
+                this.clearBtn = document.getElementById('clearBtn');
+                this.fileInput = document.getElementById('fileInput');
+                this.uploadArea = document.getElementById('uploadArea');
+                this.progressBar = document.getElementById('progressBar');
+                this.progressInfo = document.getElementById('progressInfo');
+                this.statusContainer = document.getElementById('statusContainer');
+            }
+            
+            initEventListeners() {
+                // WPM slider
+                this.wpmSlider.addEventListener('input', (e) => {
+                    this.wpm = parseInt(e.target.value);
+                    this.wpmDisplay.textContent = `${this.wpm} WPM`;
+                    if (this.isPlaying) {
+                        this.pause();
+                        this.play();
+                    }
+                });
+                
+                // Control buttons
+                this.playPauseBtn.addEventListener('click', () => this.togglePlayPause());
+                this.rewindBtn.addEventListener('click', () => this.rewind());
+                this.clearBtn.addEventListener('click', () => this.clear());
+                
+                // File upload
+                this.uploadArea.addEventListener('click', () => this.fileInput.click());
+                this.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
+                
+                // Drag and drop
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('drag-over');
+                });
+                
+                this.uploadArea.addEventListener('dragleave', () => {
+                    this.uploadArea.classList.remove('drag-over');
+                });
+                
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('drag-over');
+                    const file = e.dataTransfer.files[0];
+                    if (file) this.processFile(file);
+                });
+                
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'Space') {
+                        e.preventDefault();
+                        this.togglePlayPause();
+                    } else if (e.code === 'ArrowLeft') {
+                        this.currentIndex = Math.max(0, this.currentIndex - 10);
+                        this.displayWord();
+                    } else if (e.code === 'ArrowRight') {
+                        this.currentIndex = Math.min(this.words.length - 1, this.currentIndex + 10);
+                        this.displayWord();
+                    }
+                });
+            }
+            
+            showStatus(message, type = 'info') {
+                this.statusContainer.innerHTML = `
+                    <div class="status-message status-${type}">
+                        ${message}
+                    </div>
+                `;
+                setTimeout(() => {
+                    this.statusContainer.innerHTML = '';
+                }, 5000);
+            }
+            
+            async handleFileUpload(e) {
+                const file = e.target.files[0];
+                if (file) await this.processFile(file);
+            }
+            
+            async processFile(file) {
+                const fileName = file.name.toLowerCase();
+                
+                try {
+                    if (fileName.endsWith('.txt')) {
+                        await this.processTXT(file);
+                    } else if (fileName.endsWith('.pdf')) {
+                        await this.processPDF(file);
+                    } else if (fileName.endsWith('.epub')) {
+                        this.showStatus('EPUB support coming soon! Please use TXT or PDF files.', 'error');
+                    } else {
+                        this.showStatus('Unsupported file type. Please use TXT or PDF.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error processing file:', error);
+                    this.showStatus('Error loading file. Please try again.', 'error');
+                }
+            }
+            
+            async processTXT(file) {
+                const text = await file.text();
+                this.loadText(text);
+                this.showStatus(`Loaded: ${file.name} (${this.words.length} words)`, 'info');
+            }
+            
+            async processPDF(file) {
+                this.showStatus('Extracting text from PDF...', 'info');
+                
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let fullText = '';
+                
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + ' ';
+                }
+                
+                this.loadText(fullText);
+                this.showStatus(`Loaded: ${file.name} (${this.words.length} words from ${pdf.numPages} pages)`, 'info');
+            }
+            
+            loadText(text) {
+                // Split text into words and clean
+                this.words = text
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .split(' ')
+                    .filter(word => word.length > 0);
+                
+                this.currentIndex = 0;
+                this.updateProgress();
+                this.displayWord();
+            }
+            
+            togglePlayPause() {
+                if (this.isPlaying) {
+                    this.pause();
+                } else {
+                    this.play();
+                }
+            }
+            
+            play() {
+                if (this.words.length === 0) {
+                    this.showStatus('Please load a book first!', 'error');
+                    return;
+                }
+                
+                if (this.currentIndex >= this.words.length) {
+                    this.currentIndex = 0;
+                }
+                
+                this.isPlaying = true;
+                this.playPauseBtn.innerHTML = '⏸ Pause';
+                
+                const interval = 60000 / this.wpm; // milliseconds per word
+                
+                this.intervalId = setInterval(() => {
+                    if (this.currentIndex < this.words.length) {
+                        this.displayWord();
+                        this.currentIndex++;
+                        this.updateProgress();
+                    } else {
+                        this.pause();
+                        this.showStatus('Reading complete! 🎉', 'info');
+                    }
+                }, interval);
+            }
+            
+            pause() {
+                this.isPlaying = false;
+                this.playPauseBtn.innerHTML = '▶ Play';
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                }
+            }
+            
+            rewind() {
+                this.pause();
+                this.currentIndex = 0;
+                this.updateProgress();
+                this.displayWord();
+            }
+            
+            clear() {
+                this.pause();
+                this.words = [];
+                this.currentIndex = 0;
+                this.wordDisplay.textContent = 'Ready to read';
+                this.updateProgress();
+                this.fileInput.value = '';
+                this.showStatus('Cleared. Load a new book to start.', 'info');
+            }
+            
+            displayWord() {
+                if (this.words.length === 0) return;
+                
+                const word = this.words[this.currentIndex];
+                
+                this.wordDisplay.textContent = word;
+                this.wordDisplay.classList.remove('word-enter');
+                void this.wordDisplay.offsetWidth; // Trigger reflow
+                this.wordDisplay.classList.add('word-enter');
+            }
+            
+            updateProgress() {
+                const percentage = this.words.length > 0 
+                    ? (this.currentIndex / this.words.length) * 100 
+                    : 0;
+                this.progressBar.style.width = `${percentage}%`;
+                this.progressInfo.textContent = `${this.currentIndex} / ${this.words.length} words`;
+            }
+        }
+        
+        // Initialize the app
+        const reader = new SpeedReader();
+        
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then((registration) => {
+                        console.log('ServiceWorker registration successful:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+        
+        // PWA Install Prompt
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent the mini-infobar from appearing on mobile
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            // Show install button/banner if you want
+            showInstallPromotion();
+        });
+        
+        function showInstallPromotion() {
+            // Optional: Show a custom install banner
+            const installBanner = document.createElement('div');
+            installBanner.innerHTML = `
+                <div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
+                            background: var(--bg-medium); padding: 1rem 2rem; border-radius: 1rem;
+                            border: 1px solid var(--accent); z-index: 1000; text-align: center;
+                            box-shadow: 0 10px 40px rgba(0,0,0,0.5); animation: fadeIn 0.3s ease;">
+                    <div style="color: var(--text-primary); margin-bottom: 0.5rem;">
+                        📱 Install Speed Reader as an app!
+                    </div>
+                    <button id="installBtn" style="background: var(--accent); color: var(--bg-dark); 
+                                                    padding: 0.5rem 1.5rem; border: none; border-radius: 0.5rem;
+                                                    cursor: pointer; font-weight: 600;">
+                        Install
+                    </button>
+                    <button id="dismissBtn" style="background: transparent; color: var(--text-secondary); 
+                                                    padding: 0.5rem 1rem; border: none; cursor: pointer;
+                                                    margin-left: 0.5rem;">
+                        Not now
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(installBanner);
+            
+            document.getElementById('installBtn').addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`User response: ${outcome}`);
+                    deferredPrompt = null;
+                    installBanner.remove();
+                }
+            });
+            
+            document.getElementById('dismissBtn').addEventListener('click', () => {
+                installBanner.remove();
+            });
+        }
+        
+        // Track when app is installed
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA installed successfully!');
+            deferredPrompt = null;
+        });
+    </script>
+</body>
+</html>
