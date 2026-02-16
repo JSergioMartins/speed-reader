@@ -32,22 +32,85 @@
             --highlight: #fbbf24;
         }
         
-        /* Day Theme */
+        /* Day Theme - Kindle Style */
         body.day-theme {
-            --bg-dark: #f5f1e8;
-            --bg-medium: #ffffff;
-            --bg-light: #fafaf8;
-            --accent: #2563eb;
-            --accent-dim: #1d4ed8;
-            --text-primary: #1a1a1a;
-            --text-secondary: #6b7280;
-            --highlight: #f59e0b;
+            --bg-dark: #f4f1ea;
+            --bg-medium: #fbf9f3;
+            --bg-light: #ffffff;
+            --accent: #007185;
+            --accent-dim: #005a6e;
+            --text-primary: #0f1111;
+            --text-secondary: #565959;
+            --highlight: #c45500;
         }
         
         body.day-theme::before {
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(37, 99, 235, 0.03) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(245, 158, 11, 0.03) 0%, transparent 50%);
+            background: none;
+        }
+        
+        /* Kindle-style reading area for day theme */
+        body.day-theme .reader-container {
+            background: #fbf9f3;
+            border: 1px solid #ddd6c1;
+            box-shadow: 
+                0 2px 5px rgba(15, 17, 17, 0.05),
+                inset 0 0 80px rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+        
+        /* Subtle paper texture for Kindle feel */
+        body.day-theme .reader-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(15, 17, 17, 0.01) 2px,
+                    rgba(15, 17, 17, 0.01) 4px
+                );
+            pointer-events: none;
+            opacity: 0.3;
+        }
+        
+        body.day-theme .reader-container::before {
+            background: none;
+        }
+        
+        body.day-theme #word-display {
+            color: #0f1111;
+            text-shadow: none;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Day theme controls styling */
+        body.day-theme .controls {
+            background: #ffffff;
+            border: 1px solid #ddd6c1;
+        }
+        
+        body.day-theme .upload-area {
+            background: #ffffff;
+            border: 2px dashed #007185;
+        }
+        
+        body.day-theme .upload-area:hover {
+            border-color: #c45500;
+            background: rgba(0, 113, 133, 0.02);
+        }
+        
+        body.day-theme .progress-container {
+            background: #e7e4dc;
+        }
+        
+        body.day-theme .progress-bar {
+            background: linear-gradient(90deg, #007185, #c45500);
         }
         
         * {
@@ -499,8 +562,8 @@
     <div class="container">
         <header>
             <button class="theme-toggle" id="themeToggle">
-                <span class="theme-icon" id="themeIcon">🌙</span>
-                <span id="themeText">Night</span>
+                <span class="theme-icon" id="themeIcon">☀️</span>
+                <span id="themeText">Day</span>
             </button>
             <h1>SPEED READER</h1>
             <p class="subtitle">Train your brain to read at lightning speed</p>
@@ -558,7 +621,7 @@
                 this.isPlaying = false;
                 this.wpm = 300;
                 this.intervalId = null;
-                this.theme = 'night'; // 'night' or 'day'
+                this.theme = 'day'; // 'night' or 'day' - default to day
                 
                 this.initElements();
                 this.initEventListeners();
