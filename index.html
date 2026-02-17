@@ -215,9 +215,9 @@
             padding: 3rem;
             margin-bottom: 2rem;
             min-height: 400px;
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr 3fr 1fr;
             align-items: center;
-            justify-content: center;
             border: 1px solid rgba(255, 255, 255, 0.05);
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             position: relative;
@@ -236,6 +236,47 @@
             opacity: 0.3;
         }
         
+        .nav-zone {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            user-select: none;
+        }
+        
+        .nav-zone:hover {
+            opacity: 1;
+            background: rgba(0, 255, 157, 0.05);
+        }
+        
+        body.day-theme .nav-zone:hover {
+            background: rgba(0, 113, 133, 0.05);
+        }
+        
+        .nav-zone.disabled {
+            cursor: not-allowed;
+            opacity: 0.2 !important;
+        }
+        
+        .nav-icon {
+            font-size: 2rem;
+            color: var(--accent);
+            opacity: 0.4;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-zone:hover .nav-icon {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+        
+        .nav-zone.disabled .nav-icon {
+            opacity: 0.1;
+        }
+        
         #word-display {
             font-family: 'Crimson Pro', serif;
             font-size: clamp(3rem, 8vw, 6rem);
@@ -244,6 +285,7 @@
             line-height: 1.2;
             color: var(--text-primary);
             min-height: 1.2em;
+            padding: 0 1rem;
         }
         
         /* Removed animation for instant word changes */
@@ -525,8 +567,28 @@
             }
             
             .reader-container {
-                padding: 2rem 1rem;
+                padding: 2rem 0.5rem;
                 min-height: 300px;
+                grid-template-columns: 60px 1fr 60px;
+            }
+            
+            /* Make nav zones always visible on mobile for easier tapping */
+            .nav-zone {
+                opacity: 0.6;
+                background: rgba(0, 255, 157, 0.03);
+            }
+            
+            .nav-zone:active {
+                opacity: 1;
+                background: rgba(0, 255, 157, 0.1);
+            }
+            
+            body.day-theme .nav-zone {
+                background: rgba(0, 113, 133, 0.03);
+            }
+            
+            body.day-theme .nav-zone:active {
+                background: rgba(0, 113, 133, 0.1);
             }
             
             #word-display {
@@ -568,7 +630,13 @@
         <div id="statusContainer"></div>
         
         <div class="reader-container">
+            <div class="nav-zone" id="navPrev">
+                <span class="nav-icon">‹</span>
+            </div>
             <div id="word-display">Ready to read</div>
+            <div class="nav-zone" id="navNext">
+                <span class="nav-icon">›</span>
+            </div>
         </div>
         
         <div class="progress-container">
@@ -616,6 +684,8 @@
             
             initElements() {
                 this.wordDisplay = document.getElementById('word-display');
+                this.navPrev = document.getElementById('navPrev');
+                this.navNext = document.getElementById('navNext');
                 this.wpmSlider = document.getElementById('wpmSlider');
                 this.wpmDisplay = document.getElementById('wpmDisplay');
                 this.playPauseBtn = document.getElementById('playPauseBtn');
@@ -646,6 +716,10 @@
                 this.playPauseBtn.addEventListener('click', () => this.togglePlayPause());
                 this.rewindBtn.addEventListener('click', () => this.rewind());
                 this.clearBtn.addEventListener('click', () => this.clear());
+                
+                // Navigation zones
+                this.navPrev.addEventListener('click', () => this.goToPrevWord());
+                this.navNext.addEventListener('click', () => this.goToNextWord());
                 
                 // Theme toggle
                 this.themeToggle.addEventListener('click', () => this.toggleTheme());
@@ -814,11 +888,49 @@
                 this.showStatus('Cleared. Load a new book to start.', 'info');
             }
             
+            goToPrevWord() {
+                if (this.currentIndex > 0) {
+                    this.pause();
+                    this.currentIndex--;
+                    this.updateProgress();
+                    this.displayWord();
+                }
+            }
+            
+            goToNextWord() {
+                if (this.currentIndex < this.words.length - 1) {
+                    this.pause();
+                    this.currentIndex++;
+                    this.updateProgress();
+                    this.displayWord();
+                }
+            }
+            
             displayWord() {
-                if (this.words.length === 0) return;
+                if (this.words.length === 0) {
+                    this.updateNavButtons();
+                    return;
+                }
                 
                 const word = this.words[this.currentIndex];
                 this.wordDisplay.textContent = word;
+                this.updateNavButtons();
+            }
+            
+            updateNavButtons() {
+                // Disable prev if at start
+                if (this.currentIndex <= 0) {
+                    this.navPrev.classList.add('disabled');
+                } else {
+                    this.navPrev.classList.remove('disabled');
+                }
+                
+                // Disable next if at end
+                if (this.currentIndex >= this.words.length - 1 || this.words.length === 0) {
+                    this.navNext.classList.add('disabled');
+                } else {
+                    this.navNext.classList.remove('disabled');
+                }
             }
             
             toggleTheme() {
