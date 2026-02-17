@@ -246,18 +246,7 @@
             min-height: 1.2em;
         }
         
-        .word-enter {
-            animation: wordFade 0.15s ease;
-        }
-        
-        @keyframes wordFade {
-            0% {
-                opacity: 0;
-            }
-            100% {
-                opacity: 1;
-            }
-        }
+        /* Removed animation for instant word changes */
         
         /* Controls Panel */
         .controls {
@@ -1096,11 +1085,7 @@
                 if (this.words.length === 0) return;
                 
                 const word = this.words[this.currentIndex];
-                
                 this.wordDisplay.textContent = word;
-                this.wordDisplay.classList.remove('word-enter');
-                void this.wordDisplay.offsetWidth; // Trigger reflow
-                this.wordDisplay.classList.add('word-enter');
             }
             
             toggleTheme() {
