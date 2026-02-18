@@ -215,9 +215,9 @@
             padding: 3rem;
             margin-bottom: 2rem;
             min-height: 400px;
-            display: grid;
-            grid-template-columns: 1fr 3fr 1fr;
+            display: flex;
             align-items: center;
+            justify-content: center;
             border: 1px solid rgba(255, 255, 255, 0.05);
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             position: relative;
@@ -236,47 +236,6 @@
             opacity: 0.3;
         }
         
-        .nav-zone {
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            opacity: 0;
-            user-select: none;
-        }
-        
-        .nav-zone:hover {
-            opacity: 1;
-            background: rgba(0, 255, 157, 0.05);
-        }
-        
-        body.day-theme .nav-zone:hover {
-            background: rgba(0, 113, 133, 0.05);
-        }
-        
-        .nav-zone.disabled {
-            cursor: not-allowed;
-            opacity: 0.2 !important;
-        }
-        
-        .nav-icon {
-            font-size: 2rem;
-            color: var(--accent);
-            opacity: 0.4;
-            transition: all 0.3s ease;
-        }
-        
-        .nav-zone:hover .nav-icon {
-            opacity: 1;
-            transform: scale(1.2);
-        }
-        
-        .nav-zone.disabled .nav-icon {
-            opacity: 0.1;
-        }
-        
         #word-display {
             font-family: 'Crimson Pro', serif;
             font-size: clamp(3rem, 8vw, 6rem);
@@ -285,7 +244,6 @@
             line-height: 1.2;
             color: var(--text-primary);
             min-height: 1.2em;
-            padding: 0 1rem;
         }
         
         /* Removed animation for instant word changes */
@@ -490,21 +448,91 @@
             opacity: 0.7;
         }
         
-        /* Progress Bar */
+        /* Progress Slider */
         .progress-container {
-            background: var(--bg-dark);
-            border-radius: 0.5rem;
-            height: 8px;
-            overflow: hidden;
             margin-top: 1rem;
+            margin-bottom: 0.5rem;
         }
         
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent), var(--highlight));
-            width: 0%;
-            transition: width 0.1s linear;
-            box-shadow: 0 0 10px var(--accent);
+        .progress-slider {
+            width: 100%;
+            height: 12px;
+            border-radius: 6px;
+            background: var(--bg-dark);
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .progress-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: grab;
+            box-shadow: 0 0 0 4px rgba(0, 255, 157, 0.2);
+            transition: all 0.2s ease;
+        }
+        
+        .progress-slider::-webkit-slider-thumb:hover {
+            background: var(--highlight);
+            box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.2);
+            transform: scale(1.1);
+        }
+        
+        .progress-slider::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            transform: scale(1.2);
+        }
+        
+        .progress-slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: grab;
+            border: none;
+            box-shadow: 0 0 0 4px rgba(0, 255, 157, 0.2);
+            transition: all 0.2s ease;
+        }
+        
+        .progress-slider::-moz-range-thumb:hover {
+            background: var(--highlight);
+            box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.2);
+            transform: scale(1.1);
+        }
+        
+        .progress-slider::-moz-range-thumb:active {
+            cursor: grabbing;
+            transform: scale(1.2);
+        }
+        
+        /* Progress fill effect */
+        .progress-slider::-webkit-slider-runnable-track {
+            height: 12px;
+            border-radius: 6px;
+            background: linear-gradient(
+                to right,
+                var(--accent) 0%,
+                var(--accent) var(--progress, 0%),
+                var(--bg-dark) var(--progress, 0%),
+                var(--bg-dark) 100%
+            );
+        }
+        
+        .progress-slider::-moz-range-track {
+            height: 12px;
+            border-radius: 6px;
+            background: var(--bg-dark);
+        }
+        
+        .progress-slider::-moz-range-progress {
+            height: 12px;
+            border-radius: 6px;
+            background: var(--accent);
         }
         
         .progress-info {
@@ -567,28 +595,8 @@
             }
             
             .reader-container {
-                padding: 2rem 0.5rem;
+                padding: 2rem 1rem;
                 min-height: 300px;
-                grid-template-columns: 60px 1fr 60px;
-            }
-            
-            /* Make nav zones always visible on mobile for easier tapping */
-            .nav-zone {
-                opacity: 0.6;
-                background: rgba(0, 255, 157, 0.03);
-            }
-            
-            .nav-zone:active {
-                opacity: 1;
-                background: rgba(0, 255, 157, 0.1);
-            }
-            
-            body.day-theme .nav-zone {
-                background: rgba(0, 113, 133, 0.03);
-            }
-            
-            body.day-theme .nav-zone:active {
-                background: rgba(0, 113, 133, 0.1);
             }
             
             #word-display {
@@ -630,17 +638,11 @@
         <div id="statusContainer"></div>
         
         <div class="reader-container">
-            <div class="nav-zone" id="navPrev">
-                <span class="nav-icon">‹</span>
-            </div>
             <div id="word-display">Ready to read</div>
-            <div class="nav-zone" id="navNext">
-                <span class="nav-icon">›</span>
-            </div>
         </div>
         
         <div class="progress-container">
-            <div class="progress-bar" id="progressBar"></div>
+            <input type="range" id="progressSlider" min="0" max="100" value="0" class="progress-slider">
         </div>
         <div class="progress-info" id="progressInfo">0 / 0 words</div>
         
@@ -684,8 +686,7 @@
             
             initElements() {
                 this.wordDisplay = document.getElementById('word-display');
-                this.navPrev = document.getElementById('navPrev');
-                this.navNext = document.getElementById('navNext');
+                this.progressSlider = document.getElementById('progressSlider');
                 this.wpmSlider = document.getElementById('wpmSlider');
                 this.wpmDisplay = document.getElementById('wpmDisplay');
                 this.playPauseBtn = document.getElementById('playPauseBtn');
@@ -693,7 +694,6 @@
                 this.clearBtn = document.getElementById('clearBtn');
                 this.fileInput = document.getElementById('fileInput');
                 this.uploadArea = document.getElementById('uploadArea');
-                this.progressBar = document.getElementById('progressBar');
                 this.progressInfo = document.getElementById('progressInfo');
                 this.statusContainer = document.getElementById('statusContainer');
                 this.themeToggle = document.getElementById('themeToggle');
@@ -717,9 +717,16 @@
                 this.rewindBtn.addEventListener('click', () => this.rewind());
                 this.clearBtn.addEventListener('click', () => this.clear());
                 
-                // Navigation zones
-                this.navPrev.addEventListener('click', () => this.goToPrevWord());
-                this.navNext.addEventListener('click', () => this.goToNextWord());
+                // Progress slider
+                this.progressSlider.addEventListener('input', (e) => {
+                    if (this.words.length === 0) return;
+                    this.pause();
+                    const percentage = parseInt(e.target.value);
+                    this.currentIndex = Math.floor((percentage / 100) * this.words.length);
+                    this.currentIndex = Math.max(0, Math.min(this.currentIndex, this.words.length - 1));
+                    this.displayWord();
+                    this.updateProgress();
+                });
                 
                 // Theme toggle
                 this.themeToggle.addEventListener('click', () => this.toggleTheme());
@@ -888,49 +895,11 @@
                 this.showStatus('Cleared. Load a new book to start.', 'info');
             }
             
-            goToPrevWord() {
-                if (this.currentIndex > 0) {
-                    this.pause();
-                    this.currentIndex--;
-                    this.updateProgress();
-                    this.displayWord();
-                }
-            }
-            
-            goToNextWord() {
-                if (this.currentIndex < this.words.length - 1) {
-                    this.pause();
-                    this.currentIndex++;
-                    this.updateProgress();
-                    this.displayWord();
-                }
-            }
-            
             displayWord() {
-                if (this.words.length === 0) {
-                    this.updateNavButtons();
-                    return;
-                }
+                if (this.words.length === 0) return;
                 
                 const word = this.words[this.currentIndex];
                 this.wordDisplay.textContent = word;
-                this.updateNavButtons();
-            }
-            
-            updateNavButtons() {
-                // Disable prev if at start
-                if (this.currentIndex <= 0) {
-                    this.navPrev.classList.add('disabled');
-                } else {
-                    this.navPrev.classList.remove('disabled');
-                }
-                
-                // Disable next if at end
-                if (this.currentIndex >= this.words.length - 1 || this.words.length === 0) {
-                    this.navNext.classList.add('disabled');
-                } else {
-                    this.navNext.classList.remove('disabled');
-                }
             }
             
             toggleTheme() {
@@ -1018,7 +987,9 @@
                 const percentage = this.words.length > 0 
                     ? (this.currentIndex / this.words.length) * 100 
                     : 0;
-                this.progressBar.style.width = `${percentage}%`;
+                
+                this.progressSlider.value = percentage;
+                this.progressSlider.style.setProperty('--progress', `${percentage}%`);
                 this.progressInfo.textContent = `${this.currentIndex} / ${this.words.length} words`;
             }
         }
