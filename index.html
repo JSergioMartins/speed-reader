@@ -642,7 +642,7 @@
         </div>
         
         <div class="progress-container">
-            <input type="range" id="progressSlider" min="0" max="100" value="0" class="progress-slider">
+            <input type="range" id="progressSlider" min="0" max="1000" value="0" class="progress-slider">
         </div>
         <div class="progress-info" id="progressInfo">0 / 0 words</div>
         
@@ -721,11 +721,11 @@
                 this.progressSlider.addEventListener('input', (e) => {
                     if (this.words.length === 0) return;
                     this.pause();
-                    const percentage = parseInt(e.target.value);
-                    this.currentIndex = Math.floor((percentage / 100) * this.words.length);
+                    const sliderValue = parseInt(e.target.value);
+                    this.currentIndex = sliderValue;
                     this.currentIndex = Math.max(0, Math.min(this.currentIndex, this.words.length - 1));
                     this.displayWord();
-                    this.updateProgress();
+                    this.updateProgressDisplay();
                 });
                 
                 // Theme toggle
@@ -984,11 +984,23 @@
             }
             
             updateProgress() {
-                const percentage = this.words.length > 0 
-                    ? (this.currentIndex / this.words.length) * 100 
-                    : 0;
+                // Set slider range to match word count for 1:1 sensitivity
+                this.progressSlider.max = Math.max(1, this.words.length - 1);
+                this.progressSlider.value = this.currentIndex;
                 
-                this.progressSlider.value = percentage;
+                const percentage = this.words.length > 0 
+                    ? (this.currentIndex / (this.words.length - 1)) * 100 
+                    : 0;
+                this.progressSlider.style.setProperty('--progress', `${percentage}%`);
+                
+                this.progressInfo.textContent = `${this.currentIndex} / ${this.words.length} words`;
+            }
+            
+            updateProgressDisplay() {
+                // Update display without changing max (used during slider drag)
+                const percentage = this.words.length > 0 
+                    ? (this.currentIndex / (this.words.length - 1)) * 100 
+                    : 0;
                 this.progressSlider.style.setProperty('--progress', `${percentage}%`);
                 this.progressInfo.textContent = `${this.currentIndex} / ${this.words.length} words`;
             }
