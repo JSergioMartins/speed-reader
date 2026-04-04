@@ -161,12 +161,17 @@
             margin-bottom: 3rem;
             animation: fadeInDown 0.8s ease;
             position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-center {
+            flex: 1;
+            text-align: center;
         }
         
         .theme-toggle {
-            position: absolute;
-            top: 0;
-            right: 0;
             background: var(--bg-medium);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 2rem;
@@ -188,6 +193,51 @@
         
         .theme-icon {
             font-size: 1.2rem;
+        }
+        
+        .auth-section {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .auth-btn, .logout-btn {
+            background: var(--accent);
+            color: var(--bg-dark);
+            border: none;
+            border-radius: 2rem;
+            padding: 0.5rem 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .auth-btn:hover, .logout-btn:hover {
+            background: var(--highlight);
+            transform: translateY(-2px);
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--bg-medium);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 2rem;
+            padding: 0.5rem 1rem;
+        }
+        
+        .user-info {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .logout-btn {
+            padding: 0.4rem 1rem;
+            font-size: 0.75rem;
         }
         
         h1 {
@@ -543,6 +593,160 @@
             margin-top: 0.5rem;
         }
         
+        /* Auth Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--bg-medium);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            max-width: 450px;
+            width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: modalSlideIn 0.3s ease;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .modal-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        
+        .modal-close:hover {
+            color: var(--accent);
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-input {
+            width: 100%;
+            background: var(--bg-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            font-family: 'Crimson Pro', serif;
+            font-size: 1rem;
+            color: var(--text-primary);
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        .form-submit {
+            width: 100%;
+            background: var(--accent);
+            color: var(--bg-dark);
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.875rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .form-submit:hover {
+            background: var(--highlight);
+            transform: translateY(-2px);
+        }
+        
+        .form-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .form-divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+        
+        .form-switch {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .form-switch-link {
+            color: var(--accent);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        
+        .form-switch-link:hover {
+            color: var(--highlight);
+        }
+        
+        .form-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+        
         /* Animations */
         @keyframes fadeIn {
             from {
@@ -594,6 +798,27 @@
                 padding: 1rem;
             }
             
+            header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .theme-toggle, .auth-section {
+                position: static;
+            }
+            
+            .user-info {
+                font-size: 0.75rem;
+                max-width: 150px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            
+            .modal-content {
+                padding: 2rem 1.5rem;
+            }
+            
             .reader-container {
                 padding: 2rem 1rem;
                 min-height: 300px;
@@ -624,8 +849,17 @@
                 <span class="theme-icon" id="themeIcon">☀️</span>
                 <span id="themeText">Day</span>
             </button>
-            <h1>SPEED READER</h1>
-            <p class="subtitle">Train your brain to read at lightning speed</p>
+            <div class="header-center">
+                <h1>SPEED READER</h1>
+                <p class="subtitle">Train your brain to read at lightning speed</p>
+            </div>
+            <div class="auth-section">
+                <button class="auth-btn" id="authBtn">Sign In</button>
+                <div class="user-menu" id="userMenu" style="display: none;">
+                    <div class="user-info" id="userInfo"></div>
+                    <button class="logout-btn" id="logoutBtn">Sign Out</button>
+                </div>
+            </div>
         </header>
         
         <div class="upload-area" id="uploadArea">
@@ -666,9 +900,212 @@
         </div>
     </div>
     
+    <!-- Auth Modal -->
+    <div class="modal" id="authModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Sign In</h2>
+                <button class="modal-close" id="modalClose">×</button>
+            </div>
+            
+            <div id="authError" class="form-error" style="display: none;"></div>
+            
+            <!-- Login Form -->
+            <form id="loginForm" style="display: block;">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="loginPassword" required>
+                </div>
+                <button type="submit" class="form-submit" id="loginSubmit">Sign In</button>
+                <div class="form-switch">
+                    Don't have an account? <span class="form-switch-link" id="showRegister">Create one</span>
+                </div>
+            </form>
+            
+            <!-- Register Form -->
+            <form id="registerForm" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">Full Name (optional)</label>
+                    <input type="text" class="form-input" id="registerName">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="registerEmail" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password (min 8 characters)</label>
+                    <input type="password" class="form-input" id="registerPassword" required minlength="8">
+                </div>
+                <button type="submit" class="form-submit" id="registerSubmit">Create Account</button>
+                <div class="form-switch">
+                    Already have an account? <span class="form-switch-link" id="showLogin">Sign in</span>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <script>
         const API_URL = 'https://speed-reader-api-production.up.railway.app';
 
+        // ── AuthManager ───────────────────────────────────────────────────────
+        class AuthManager {
+            constructor() {
+                this.token = localStorage.getItem('authToken');
+                this.user = null;
+                this.init();
+            }
+            
+            async init() {
+                if (this.token) {
+                    try {
+                        await this.loadUser();
+                    } catch (error) {
+                        this.logout();
+                    }
+                }
+            }
+            
+            isAuthenticated() {
+                return !!this.token;
+            }
+            
+            getHeaders() {
+                const headers = { 'Content-Type': 'application/json' };
+                if (this.token) {
+                    headers['Authorization'] = `Bearer ${this.token}`;
+                }
+                return headers;
+            }
+            
+            async register(email, password, fullName = null) {
+                const response = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, full_name: fullName })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Registration failed');
+                }
+                
+                const data = await response.json();
+                this.token = data.access_token;
+                localStorage.setItem('authToken', this.token);
+                await this.loadUser();
+                return this.user;
+            }
+            
+            async login(email, password) {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Login failed');
+                }
+                
+                const data = await response.json();
+                this.token = data.access_token;
+                localStorage.setItem('authToken', this.token);
+                await this.loadUser();
+                return this.user;
+            }
+            
+            async loadUser() {
+                const response = await fetch(`${API_URL}/auth/me`, {
+                    headers: this.getHeaders()
+                });
+                
+                if (!response.ok) throw new Error('Failed to load user');
+                
+                this.user = await response.json();
+                return this.user;
+            }
+            
+            logout() {
+                this.token = null;
+                this.user = null;
+                localStorage.removeItem('authToken');
+            }
+            
+            // User data methods
+            async saveSession(bookHash, bookTitle, currentIndex, totalWords, wpm, theme, currentChapter = null) {
+                if (!this.isAuthenticated()) return null;
+                
+                const response = await fetch(`${API_URL}/user/sessions`, {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify({
+                        book_hash: bookHash,
+                        book_title: bookTitle,
+                        current_word_index: currentIndex,
+                        total_words: totalWords,
+                        wpm: wpm,
+                        theme: theme,
+                        current_chapter: currentChapter
+                    })
+                });
+                
+                if (response.ok) {
+                    return await response.json();
+                }
+                return null;
+            }
+            
+            async updateSession(sessionId, currentIndex, currentChapter = null) {
+                if (!this.isAuthenticated()) return null;
+                
+                const response = await fetch(`${API_URL}/user/sessions/${sessionId}`, {
+                    method: 'PATCH',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify({
+                        current_word_index: currentIndex,
+                        current_chapter: currentChapter
+                    })
+                });
+                
+                if (response.ok) {
+                    return await response.json();
+                }
+                return null;
+            }
+            
+            async getSessions() {
+                if (!this.isAuthenticated()) return [];
+                
+                const response = await fetch(`${API_URL}/user/sessions`, {
+                    headers: this.getHeaders()
+                });
+                
+                if (response.ok) {
+                    return await response.json();
+                }
+                return [];
+            }
+            
+            async getStats() {
+                if (!this.isAuthenticated()) return null;
+                
+                const response = await fetch(`${API_URL}/user/stats`, {
+                    headers: this.getHeaders()
+                });
+                
+                if (response.ok) {
+                    return await response.json();
+                }
+                return null;
+            }
+        }
+
+        // ── SpeedReader ───────────────────────────────────────────────────────
         class SpeedReader {
             constructor() {
                 this.words = [];
@@ -678,10 +1115,17 @@
                 this.wpm = 300;
                 this.intervalId = null;
                 this.theme = 'day';
+                this.currentBookHash = null;
+                this.currentBookTitle = null;
+                this.currentSessionId = null;
+                
+                this.auth = new AuthManager();
                 
                 this.initElements();
                 this.initEventListeners();
+                this.initAuthUI();
                 this.loadTheme();
+                this.updateAuthUI();
             }
             
             initElements() {
@@ -699,6 +1143,19 @@
                 this.themeToggle = document.getElementById('themeToggle');
                 this.themeIcon = document.getElementById('themeIcon');
                 this.themeText = document.getElementById('themeText');
+                
+                // Auth elements
+                this.authBtn = document.getElementById('authBtn');
+                this.userMenu = document.getElementById('userMenu');
+                this.userInfo = document.getElementById('userInfo');
+                this.logoutBtn = document.getElementById('logoutBtn');
+                this.authModal = document.getElementById('authModal');
+                this.modalClose = document.getElementById('modalClose');
+                this.loginForm = document.getElementById('loginForm');
+                this.registerForm = document.getElementById('registerForm');
+                this.showRegister = document.getElementById('showRegister');
+                this.showLogin = document.getElementById('showLogin');
+                this.authError = document.getElementById('authError');
             }
             
             initEventListeners() {
@@ -816,8 +1273,17 @@
                     this.chapters = data.chapters;
                     this.currentIndex = 0;
                     
+                    // Generate book hash and save title for progress tracking
+                    this.currentBookTitle = file.name.replace(/\.[^/.]+$/, ''); // Remove extension
+                    this.currentBookHash = this.generateBookHash(file.name, data.totalWords);
+                    
                     this.updateProgress();
                     this.displayWord();
+                    
+                    // Save initial progress if authenticated
+                    if (this.auth.isAuthenticated()) {
+                        await this.saveProgress();
+                    }
                     
                     if (this.chapters.length > 0) {
                         this.showChapterSelector();
@@ -853,6 +1319,9 @@
                 this.isPlaying = true;
                 this.playPauseBtn.innerHTML = '⏸ Pause';
                 
+                // Start auto-save interval
+                this.startAutoSave();
+                
                 const interval = 60000 / this.wpm; // milliseconds per word
                 
                 this.intervalId = setInterval(() => {
@@ -874,6 +1343,12 @@
                     clearInterval(this.intervalId);
                     this.intervalId = null;
                 }
+                
+                // Stop auto-save and save current progress
+                this.stopAutoSave();
+                if (this.auth.isAuthenticated() && this.words.length > 0) {
+                    this.saveProgress();
+                }
             }
             
             rewind() {
@@ -885,9 +1360,13 @@
             
             clear() {
                 this.pause();
+                this.stopAutoSave();
                 this.words = [];
                 this.chapters = [];
                 this.currentIndex = 0;
+                this.currentBookHash = null;
+                this.currentBookTitle = null;
+                this.currentSessionId = null;
                 this.wordDisplay.textContent = 'Ready to read';
                 this.updateProgress();
                 this.hideChapterSelector();
@@ -1003,6 +1482,190 @@
                     : 0;
                 this.progressSlider.style.setProperty('--progress', `${percentage}%`);
                 this.progressInfo.textContent = `${this.currentIndex} / ${this.words.length} words`;
+            }
+            
+            generateBookHash(filename, totalWords) {
+                // Simple hash from filename and word count
+                const str = `${filename}_${totalWords}`;
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // Convert to 32bit integer
+                }
+                return Math.abs(hash).toString(36);
+            }
+            
+            startAutoSave() {
+                // Clear any existing interval
+                if (this.autoSaveInterval) {
+                    clearInterval(this.autoSaveInterval);
+                }
+                
+                // Auto-save every 10 seconds while reading
+                this.autoSaveInterval = setInterval(async () => {
+                    if (this.auth.isAuthenticated() && this.words.length > 0) {
+                        await this.saveProgress();
+                    }
+                }, 10000);
+            }
+            
+            stopAutoSave() {
+                if (this.autoSaveInterval) {
+                    clearInterval(this.autoSaveInterval);
+                    this.autoSaveInterval = null;
+                }
+            }
+            
+            // ── Auth UI Methods ───────────────────────────────────────────────
+            initAuthUI() {
+                // Auth button click
+                this.authBtn.addEventListener('click', () => this.showAuthModal());
+                this.logoutBtn.addEventListener('click', () => this.handleLogout());
+                
+                // Modal close
+                this.modalClose.addEventListener('click', () => this.hideAuthModal());
+                this.authModal.addEventListener('click', (e) => {
+                    if (e.target === this.authModal) this.hideAuthModal();
+                });
+                
+                // Form switching
+                this.showRegister.addEventListener('click', () => this.switchToRegister());
+                this.showLogin.addEventListener('click', () => this.switchToLogin());
+                
+                // Form submissions
+                this.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+                this.registerForm.addEventListener('submit', (e) => this.handleRegister(e));
+            }
+            
+            updateAuthUI() {
+                if (this.auth.isAuthenticated() && this.auth.user) {
+                    this.authBtn.style.display = 'none';
+                    this.userMenu.style.display = 'flex';
+                    this.userInfo.textContent = this.auth.user.email;
+                } else {
+                    this.authBtn.style.display = 'block';
+                    this.userMenu.style.display = 'none';
+                }
+            }
+            
+            showAuthModal() {
+                this.authModal.classList.add('active');
+                this.switchToLogin();
+            }
+            
+            hideAuthModal() {
+                this.authModal.classList.remove('active');
+                this.authError.style.display = 'none';
+                this.loginForm.reset();
+                this.registerForm.reset();
+            }
+            
+            switchToLogin() {
+                this.loginForm.style.display = 'block';
+                this.registerForm.style.display = 'none';
+                document.getElementById('modalTitle').textContent = 'Sign In';
+                this.authError.style.display = 'none';
+            }
+            
+            switchToRegister() {
+                this.loginForm.style.display = 'none';
+                this.registerForm.style.display = 'block';
+                document.getElementById('modalTitle').textContent = 'Create Account';
+                this.authError.style.display = 'none';
+            }
+            
+            async handleLogin(e) {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                const submitBtn = document.getElementById('loginSubmit');
+                
+                try {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Signing in...';
+                    this.authError.style.display = 'none';
+                    
+                    await this.auth.login(email, password);
+                    this.updateAuthUI();
+                    this.hideAuthModal();
+                    this.showStatus('✅ Signed in successfully!', 'info');
+                    
+                    // Load user's sessions if needed
+                    await this.loadUserSessions();
+                } catch (error) {
+                    this.authError.textContent = error.message;
+                    this.authError.style.display = 'block';
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Sign In';
+                }
+            }
+            
+            async handleRegister(e) {
+                e.preventDefault();
+                const email = document.getElementById('registerEmail').value;
+                const password = document.getElementById('registerPassword').value;
+                const fullName = document.getElementById('registerName').value;
+                const submitBtn = document.getElementById('registerSubmit');
+                
+                try {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Creating account...';
+                    this.authError.style.display = 'none';
+                    
+                    await this.auth.register(email, password, fullName || null);
+                    this.updateAuthUI();
+                    this.hideAuthModal();
+                    this.showStatus('✅ Account created! Welcome!', 'info');
+                } catch (error) {
+                    this.authError.textContent = error.message;
+                    this.authError.style.display = 'block';
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Create Account';
+                }
+            }
+            
+            handleLogout() {
+                this.auth.logout();
+                this.updateAuthUI();
+                this.currentSessionId = null;
+                this.showStatus('Signed out', 'info');
+            }
+            
+            async loadUserSessions() {
+                if (!this.auth.isAuthenticated()) return;
+                
+                try {
+                    const sessions = await this.auth.getSessions();
+                    // Could show a list of recent books here
+                    console.log('User sessions:', sessions);
+                } catch (error) {
+                    console.error('Failed to load sessions:', error);
+                }
+            }
+            
+            // Auto-save progress
+            async saveProgress() {
+                if (!this.auth.isAuthenticated() || !this.currentBookHash) return;
+                
+                try {
+                    const session = await this.auth.saveSession(
+                        this.currentBookHash,
+                        this.currentBookTitle,
+                        this.currentIndex,
+                        this.words.length,
+                        this.wpm,
+                        this.theme
+                    );
+                    
+                    if (session) {
+                        this.currentSessionId = session.id;
+                    }
+                } catch (error) {
+                    console.error('Failed to save progress:', error);
+                }
             }
         }
         
