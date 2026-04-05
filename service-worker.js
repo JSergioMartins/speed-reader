@@ -1,4 +1,4 @@
-const CACHE_NAME = 'speed-reader-v9';
+const CACHE_NAME = 'speed-reader-v10';
 const urlsToCache = [
   './',
   './index.html',

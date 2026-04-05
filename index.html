@@ -470,6 +470,16 @@
             background: rgba(0, 255, 157, 0.05);
         }
         
+        .upload-area.disabled {
+            opacity: 0.7;
+            cursor: default;
+        }
+        
+        .upload-area.disabled:hover {
+            border-color: rgba(0, 255, 157, 0.3);
+            background: var(--bg-dark);
+        }
+        
         .upload-area.drag-over {
             border-color: var(--highlight);
             background: rgba(251, 191, 36, 0.1);
@@ -864,9 +874,9 @@
         
         <div class="upload-area" id="uploadArea">
             <div class="upload-icon">📖</div>
-            <div class="upload-text">Drop your book here or click to browse</div>
-            <div class="upload-hint">Supports TXT, PDF, EPUB, and MOBI files</div>
-            <input type="file" id="fileInput" accept=".txt,.pdf,.epub,.mobi">
+            <div class="upload-text" id="uploadText">Sign in to start reading</div>
+            <div class="upload-hint" id="uploadHint">Create a free account to track your progress</div>
+            <input type="file" id="fileInput" accept=".txt,.pdf,.epub,.mobi" style="display: none;">
         </div>
         
         <div id="statusContainer"></div>
@@ -930,7 +940,7 @@
             <form id="registerForm" style="display: none;">
                 <div class="form-group">
                     <label class="form-label">Full Name (optional)</label>
-                    <input type="text" class="form-input" id="registerName">
+                    <input type="text" class="form-input" id="registerName" placeholder="João Silva">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Email</label>
@@ -1138,6 +1148,8 @@
                 this.clearBtn = document.getElementById('clearBtn');
                 this.fileInput = document.getElementById('fileInput');
                 this.uploadArea = document.getElementById('uploadArea');
+                this.uploadText = document.getElementById('uploadText');
+                this.uploadHint = document.getElementById('uploadHint');
                 this.progressInfo = document.getElementById('progressInfo');
                 this.statusContainer = document.getElementById('statusContainer');
                 this.themeToggle = document.getElementById('themeToggle');
@@ -1188,14 +1200,23 @@
                 // Theme toggle
                 this.themeToggle.addEventListener('click', () => this.toggleTheme());
                 
-                // File upload
-                this.uploadArea.addEventListener('click', () => this.fileInput.click());
+                // File upload - require login
+                this.uploadArea.addEventListener('click', () => {
+                    if (!this.auth.isAuthenticated()) {
+                        this.showAuthModal();
+                        return;
+                    }
+                    this.fileInput.click();
+                });
+                
                 this.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
                 
-                // Drag and drop
+                // Drag and drop - require login
                 this.uploadArea.addEventListener('dragover', (e) => {
                     e.preventDefault();
-                    this.uploadArea.classList.add('drag-over');
+                    if (this.auth.isAuthenticated()) {
+                        this.uploadArea.classList.add('drag-over');
+                    }
                 });
                 
                 this.uploadArea.addEventListener('dragleave', () => {
@@ -1205,6 +1226,13 @@
                 this.uploadArea.addEventListener('drop', (e) => {
                     e.preventDefault();
                     this.uploadArea.classList.remove('drag-over');
+                    
+                    if (!this.auth.isAuthenticated()) {
+                        this.showAuthModal();
+                        this.showStatus('Please sign in to upload books', 'error');
+                        return;
+                    }
+                    
                     const file = e.dataTransfer.files[0];
                     if (file) this.processFile(file);
                 });
@@ -1540,12 +1568,26 @@
             
             updateAuthUI() {
                 if (this.auth.isAuthenticated() && this.auth.user) {
+                    // User logged in
                     this.authBtn.style.display = 'none';
                     this.userMenu.style.display = 'flex';
                     this.userInfo.textContent = this.auth.user.email;
+                    
+                    // Enable file upload
+                    this.uploadText.textContent = 'Drop your book here or click to browse';
+                    this.uploadHint.textContent = 'Supports TXT, PDF, EPUB, and MOBI files';
+                    this.fileInput.style.display = 'block';
+                    this.uploadArea.classList.remove('disabled');
                 } else {
+                    // User not logged in
                     this.authBtn.style.display = 'block';
                     this.userMenu.style.display = 'none';
+                    
+                    // Show login prompt
+                    this.uploadText.textContent = 'Sign in to start reading';
+                    this.uploadHint.textContent = 'Create a free account to track your progress';
+                    this.fileInput.style.display = 'none';
+                    this.uploadArea.classList.add('disabled');
                 }
             }
             
