@@ -963,9 +963,10 @@
 
         // ── AuthManager ───────────────────────────────────────────────────────
         class AuthManager {
-            constructor() {
+            constructor(onReady) {
                 this.token = localStorage.getItem('authToken');
                 this.user = null;
+                this._onReady = onReady || (() => {});
                 this.init();
             }
             
@@ -977,6 +978,7 @@
                         this.logout();
                     }
                 }
+                this._onReady();
             }
             
             isAuthenticated() {
@@ -1129,13 +1131,12 @@
                 this.currentBookTitle = null;
                 this.currentSessionId = null;
                 
-                this.auth = new AuthManager();
+                this.auth = new AuthManager(() => this.updateAuthUI());
                 
                 this.initElements();
                 this.initEventListeners();
                 this.initAuthUI();
                 this.loadTheme();
-                this.updateAuthUI();
             }
             
             initElements() {
@@ -1237,8 +1238,12 @@
                     if (file) this.processFile(file);
                 });
                 
-                // Keyboard shortcuts
+                // Keyboard shortcuts (only when NOT typing in a form field)
                 document.addEventListener('keydown', (e) => {
+                    const tag = e.target.tagName;
+                    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+                    if (this.authModal.classList.contains('active')) return;
+                    
                     if (e.code === 'Space') {
                         e.preventDefault();
                         this.togglePlayPause();
