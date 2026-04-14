@@ -457,12 +457,16 @@
             background: var(--bg-dark);
             border: 2px dashed rgba(0, 255, 157, 0.3);
             border-radius: 1rem;
-            padding: 2rem;
+            padding: 1.25rem;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             animation: fadeIn 1s ease 0.6s both;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
         }
         
         .upload-area:hover {
@@ -491,19 +495,23 @@
         }
         
         .upload-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
+            font-size: 1.75rem;
             opacity: 0.5;
+            flex-shrink: 0;
+        }
+        
+        .upload-content {
+            text-align: left;
         }
         
         .upload-text {
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: var(--text-secondary);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.15rem;
         }
         
         .upload-hint {
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             color: var(--text-secondary);
             opacity: 0.7;
         }
@@ -874,8 +882,10 @@
         
         <div class="upload-area" id="uploadArea">
             <div class="upload-icon">📖</div>
-            <div class="upload-text" id="uploadText">Sign in to start reading</div>
-            <div class="upload-hint" id="uploadHint">Create a free account to track your progress</div>
+            <div class="upload-content">
+                <div class="upload-text" id="uploadText">Sign in to start reading</div>
+                <div class="upload-hint" id="uploadHint">Create a free account to track your progress</div>
+            </div>
             <input type="file" id="fileInput" accept=".txt,.pdf,.epub,.mobi" style="display: none;">
         </div>
         
@@ -1307,24 +1317,55 @@
                     this.currentIndex = 0;
                     
                     // Generate book hash and save title for progress tracking
-                    this.currentBookTitle = file.name.replace(/\.[^/.]+$/, ''); // Remove extension
+                    this.currentBookTitle = file.name.replace(/\.[^/.]+$/, '');
                     this.currentBookHash = this.generateBookHash(file.name, data.totalWords);
+                    
+                    // ── Restore saved progress if user is logged in ─────────
+                    let restored = false;
+                    if (this.auth.isAuthenticated()) {
+                        try {
+                            const sessions = await this.auth.getSessions();
+                            const existing = sessions.find(s => s.book_hash === this.currentBookHash);
+                            if (existing && existing.current_word_index > 0) {
+                                this.currentIndex = Math.min(existing.current_word_index, this.words.length - 1);
+                                this.currentSessionId = existing.id;
+                                // Restore WPM preference
+                                if (existing.wpm) {
+                                    this.wpm = existing.wpm;
+                                    this.wpmSlider.value = this.wpm;
+                                    this.wpmDisplay.textContent = `${this.wpm} WPM`;
+                                }
+                                restored = true;
+                            }
+                        } catch (e) {
+                            console.error('Failed to restore progress:', e);
+                        }
+                    }
                     
                     this.updateProgress();
                     this.displayWord();
                     
-                    // Save initial progress if authenticated
-                    if (this.auth.isAuthenticated()) {
+                    // Only create a new session entry for books we haven't seen
+                    if (this.auth.isAuthenticated() && !restored) {
                         await this.saveProgress();
                     }
                     
                     if (this.chapters.length > 0) {
                         this.showChapterSelector();
-                        this.showStatus(`✅ Loaded: ${file.name} — ${data.totalChapters} chapters, ${data.totalWords} words`, 'info');
                     } else {
                         this.hideChapterSelector();
-                        this.showStatus(`✅ Loaded: ${file.name} — ${data.totalWords} words`, 'info');
                     }
+                    
+                    // ── Build status message ────────────────────────────────
+                    let status = `✅ Loaded: ${file.name}`;
+                    if (data.totalChapters > 0) status += ` — ${data.totalChapters} chapters,`;
+                    status += ` ${data.totalWords} words`;
+                    if (restored) {
+                        const pct = Math.round((this.currentIndex / this.words.length) * 100);
+                        status += ` | 📖 Resumed at ${pct}%`;
+                    }
+                    this.showStatus(status, 'info');
+                    
                 } catch (error) {
                     console.error('Parse error:', error);
                     this.showStatus(`❌ Error: ${error.message}`, 'error');
