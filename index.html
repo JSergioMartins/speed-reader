@@ -881,7 +881,7 @@
         </header>
         
         <div class="upload-area" id="uploadArea">
-            <div class="upload-icon">📖</div>
+            <div class="upload-icon" id="uploadIcon">📖</div>
             <div class="upload-content">
                 <div class="upload-text" id="uploadText">Sign in to start reading</div>
                 <div class="upload-hint" id="uploadHint">Create a free account to track your progress</div>
@@ -1159,6 +1159,7 @@
                 this.clearBtn = document.getElementById('clearBtn');
                 this.fileInput = document.getElementById('fileInput');
                 this.uploadArea = document.getElementById('uploadArea');
+                this.uploadIcon = document.getElementById('uploadIcon');
                 this.uploadText = document.getElementById('uploadText');
                 this.uploadHint = document.getElementById('uploadHint');
                 this.progressInfo = document.getElementById('progressInfo');
@@ -1366,6 +1367,11 @@
                     }
                     this.showStatus(status, 'info');
                     
+                    // Update upload bar to show current book
+                    this.uploadIcon.textContent = '📗';
+                    this.uploadText.textContent = this.currentBookTitle;
+                    this.uploadHint.textContent = 'Tap to load a different book';
+                    
                 } catch (error) {
                     console.error('Parse error:', error);
                     this.showStatus(`❌ Error: ${error.message}`, 'error');
@@ -1445,6 +1451,12 @@
                 this.updateProgress();
                 this.hideChapterSelector();
                 this.fileInput.value = '';
+                
+                // Reset upload bar
+                this.uploadIcon.textContent = '📖';
+                this.uploadText.textContent = 'Drop your book here or tap to browse';
+                this.uploadHint.textContent = 'Supports TXT, PDF, EPUB, and MOBI files';
+                
                 this.showStatus('Cleared. Load a new book to start.', 'info');
             }
             
@@ -1619,10 +1631,11 @@
                     this.userMenu.style.display = 'flex';
                     this.userInfo.textContent = this.auth.user.email;
                     
-                    // Enable file upload
-                    this.uploadText.textContent = 'Drop your book here or click to browse';
-                    this.uploadHint.textContent = 'Supports TXT, PDF, EPUB, and MOBI files';
-                    this.fileInput.style.display = 'block';
+                    // Enable file upload (but keep input hidden — it's triggered via .click())
+                    if (!this.currentBookTitle) {
+                        this.uploadText.textContent = 'Drop your book here or tap to browse';
+                        this.uploadHint.textContent = 'Supports TXT, PDF, EPUB, and MOBI files';
+                    }
                     this.uploadArea.classList.remove('disabled');
                 } else {
                     // User not logged in
@@ -1632,7 +1645,6 @@
                     // Show login prompt
                     this.uploadText.textContent = 'Sign in to start reading';
                     this.uploadHint.textContent = 'Create a free account to track your progress';
-                    this.fileInput.style.display = 'none';
                     this.uploadArea.classList.add('disabled');
                 }
             }
