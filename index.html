@@ -307,9 +307,97 @@
             line-height: 1.2;
             color: var(--text-primary);
             min-height: 1.2em;
+            /* Explicitly no animation/transition: one-word mode is instant swap */
+            transition: none !important;
+            animation: none !important;
         }
         
-        /* Removed animation for instant word changes */
+        /* ── Rolling Text Mode ──────────────────────────────────────────── */
+        #rolling-display {
+            display: none;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            /* Fade edges so words enter/exit smoothly */
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%);
+                    mask-image: linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%);
+        }
+        
+        body.rolling-mode #word-display {
+            display: none;
+        }
+        
+        body.rolling-mode #rolling-display {
+            display: block;
+        }
+        
+        #rolling-ribbon {
+            display: inline-flex;
+            gap: 1.75rem;
+            white-space: nowrap;
+            font-family: 'Crimson Pro', serif;
+            font-size: clamp(1.75rem, 4.5vw, 3rem);
+            line-height: 1.2;
+            will-change: transform;
+            /* transition is set dynamically in JS to match WPM */
+        }
+        
+        .rolling-word {
+            color: var(--text-secondary);
+            opacity: 0.4;
+            font-weight: 400;
+            flex-shrink: 0;
+            /* ONLY the highlight transitions — the ribbon translate is what creates motion */
+            transition: color 0.25s ease, opacity 0.25s ease, font-weight 0s;
+        }
+        
+        .rolling-word.current {
+            color: var(--text-primary);
+            opacity: 1;
+            font-weight: 600;
+        }
+        
+        /* ── Reading Mode Toggle (segmented control) ────────────────────── */
+        .mode-toggle {
+            display: inline-flex;
+            background: var(--bg-dark);
+            border-radius: 0.75rem;
+            padding: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        body.day-theme .mode-toggle {
+            background: #e7e4dc;
+            border-color: #ddd6c1;
+        }
+        
+        .mode-btn {
+            background: transparent;
+            color: var(--text-secondary);
+            padding: 0.55rem 1.2rem;
+            border-radius: 0.55rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            text-transform: none;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+        
+        .mode-btn:hover {
+            color: var(--text-primary);
+        }
+        
+        .mode-btn.active {
+            background: var(--accent);
+            color: var(--bg-dark);
+            font-weight: 600;
+        }
+        
+        /* Disable the expensive ripple (::before width/height transition) */
+        .mode-btn::before { content: none; }
         
         /* Controls Panel */
         .controls {
@@ -906,6 +994,9 @@
         
         <div class="reader-container">
             <div id="word-display">Ready to read</div>
+            <div id="rolling-display">
+                <div id="rolling-ribbon"></div>
+            </div>
         </div>
         
         <div class="progress-container">
@@ -915,19 +1006,27 @@
         
         <div class="controls">
             <div class="control-group">
-                <label>Reading Speed</label>
-                <div class="slider-container">
-                    <input type="range" id="wpmSlider" min="10" max="1000" value="300" step="10">
-                    <span class="wpm-display" id="wpmDisplay">300 WPM</span>
-                </div>
-            </div>
-            
-            <div class="control-group">
                 <label>Controls</label>
                 <div class="button-group">
                     <button class="btn-primary" id="playPauseBtn">▶ Play</button>
                     <button class="btn-secondary" id="rewindBtn">⏮ Restart</button>
                     <button class="btn-danger" id="clearBtn">✕ Clear</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>Reading Mode</label>
+                <div class="mode-toggle" id="modeToggle">
+                    <button type="button" class="mode-btn active" data-mode="word">One Word</button>
+                    <button type="button" class="mode-btn" data-mode="rolling">Rolling Text</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>Reading Speed</label>
+                <div class="slider-container">
+                    <input type="range" id="wpmSlider" min="10" max="1000" value="300" step="10">
+                    <span class="wpm-display" id="wpmDisplay">300 WPM</span>
                 </div>
             </div>
         </div>
@@ -1154,16 +1253,28 @@
                 this.currentBookTitle = null;
                 this.currentSessionId = null;
                 
+                // Reading mode: 'word' (one-at-a-time, instant) or 'rolling' (continuous ribbon)
+                this.readingMode = localStorage.getItem('speedReaderMode') || 'word';
+                
+                // Rolling-mode state
+                this.rollingWindowStart = 0;      // absolute index of first word in the rendered window
+                this.rollingWindowSize = 41;      // odd number so "current" can sit at center
+                this.rollingRebuildThreshold = 8; // rebuild window when current word gets this close to an edge
+                
                 this.auth = new AuthManager(() => this.updateAuthUI());
                 
                 this.initElements();
                 this.initEventListeners();
                 this.initAuthUI();
                 this.loadTheme();
+                this.applyReadingMode();  // set initial mode class
             }
             
             initElements() {
                 this.wordDisplay = document.getElementById('word-display');
+                this.rollingDisplay = document.getElementById('rolling-display');
+                this.rollingRibbon = document.getElementById('rolling-ribbon');
+                this.modeToggle = document.getElementById('modeToggle');
                 this.progressSlider = document.getElementById('progressSlider');
                 this.wpmSlider = document.getElementById('wpmSlider');
                 this.wpmDisplay = document.getElementById('wpmDisplay');
@@ -1200,10 +1311,17 @@
                 this.wpmSlider.addEventListener('input', (e) => {
                     this.wpm = parseInt(e.target.value);
                     this.wpmDisplay.textContent = `${this.wpm} WPM`;
-                    if (this.isPlaying) {
-                        this.pause();
-                        this.play();
-                    }
+                    // Restart interval without triggering a save (avoids a POST per drag tick)
+                    if (this.isPlaying) this._restartInterval();
+                });
+                
+                // Reading mode toggle (segmented control)
+                this.modeToggle.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.mode-btn');
+                    if (!btn) return;
+                    const mode = btn.dataset.mode;
+                    if (mode === this.readingMode) return;
+                    this.setReadingMode(mode);
                 });
                 
                 // Control buttons
@@ -1218,8 +1336,10 @@
                     const sliderValue = parseInt(e.target.value);
                     this.currentIndex = sliderValue;
                     this.currentIndex = Math.max(0, Math.min(this.currentIndex, this.words.length - 1));
-                    this.displayWord();
+                    this.displayCurrent();
                     this.updateProgressDisplay();
+                    this.updateChapterSelection();
+                    if (this.readingMode === 'rolling') this.renderRollingWindow();
                 });
                 
                 // Theme toggle
@@ -1273,10 +1393,16 @@
                         this.togglePlayPause();
                     } else if (e.code === 'ArrowLeft') {
                         this.currentIndex = Math.max(0, this.currentIndex - 10);
-                        this.displayWord();
+                        this.displayCurrent();
+                        this.updateProgress();
+                        this.updateChapterSelection();
+                        if (this.readingMode === 'rolling') this.renderRollingWindow();
                     } else if (e.code === 'ArrowRight') {
                         this.currentIndex = Math.min(this.words.length - 1, this.currentIndex + 10);
-                        this.displayWord();
+                        this.displayCurrent();
+                        this.updateProgress();
+                        this.updateChapterSelection();
+                        if (this.readingMode === 'rolling') this.renderRollingWindow();
                     }
                 });
             }
@@ -1357,7 +1483,7 @@
                     }
                     
                     this.updateProgress();
-                    this.displayWord();
+                    this.displayCurrent();
                     
                     // Only create a new session entry for books we haven't seen
                     if (this.auth.isAuthenticated() && !restored) {
@@ -1365,7 +1491,7 @@
                     }
                     
                     if (this.chapters.length > 0) {
-                        this.showChapterSelector();
+                        this.showChapterSelector();  // also calls updateChapterSelection()
                     } else {
                         this.hideChapterSelector();
                     }
@@ -1412,21 +1538,46 @@
                 this.isPlaying = true;
                 this.playPauseBtn.innerHTML = '⏸ Pause';
                 
+                // Make sure the rolling ribbon is rendered and positioned before we start
+                if (this.readingMode === 'rolling') {
+                    this.renderRollingWindow();
+                }
+                
                 // Start auto-save interval
                 this.startAutoSave();
-                
-                const interval = 60000 / this.wpm; // milliseconds per word
+                this._startInterval();
+            }
+            
+            _startInterval() {
+                if (this.intervalId) clearInterval(this.intervalId);
+                const interval = 60000 / this.wpm; // ms per word
                 
                 this.intervalId = setInterval(() => {
-                    if (this.currentIndex < this.words.length) {
-                        this.displayWord();
+                    if (this.currentIndex < this.words.length - 1) {
                         this.currentIndex++;
+                        this.displayCurrent(interval);
                         this.updateProgress();
+                        this.updateChapterSelection();
                     } else {
+                        // Show the last word, then stop
+                        this.displayCurrent(0);
                         this.pause();
                         this.showStatus('Reading complete! 🎉', 'info');
                     }
                 }, interval);
+            }
+            
+            /**
+             * Restart the tick interval after a WPM change while playing,
+             * WITHOUT triggering pause()'s saveProgress POST (which would fire
+             * on every step of the WPM slider drag).
+             */
+            _restartInterval() {
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                }
+                this._startInterval();
             }
             
             pause() {
@@ -1448,7 +1599,8 @@
                 this.pause();
                 this.currentIndex = 0;
                 this.updateProgress();
-                this.displayWord();
+                this.displayCurrent();
+                this.updateChapterSelection();
             }
             
             clear() {
@@ -1461,6 +1613,9 @@
                 this.currentBookTitle = null;
                 this.currentSessionId = null;
                 this.wordDisplay.textContent = 'Ready to read';
+                this.rollingRibbon.innerHTML = '';
+                this.rollingRibbon.style.transition = 'none';
+                this.rollingRibbon.style.transform = '';
                 this.updateProgress();
                 this.hideChapterSelector();
                 this.fileInput.value = '';
@@ -1473,11 +1628,169 @@
                 this.showStatus('Cleared. Load a new book to start.', 'info');
             }
             
-            displayWord() {
+            /**
+             * Mode-aware display. Called on every tick and every seek.
+             * @param {number} tickInterval - ms until next tick. Used by rolling mode
+             *   to set the CSS transition duration for continuous motion. Pass 0 or
+             *   omit for an instant snap (used for seeks, chapter jumps, pauses).
+             */
+            displayCurrent(tickInterval = 0) {
                 if (this.words.length === 0) return;
                 
-                const word = this.words[this.currentIndex];
-                this.wordDisplay.textContent = word;
+                if (this.readingMode === 'rolling') {
+                    // Lazy-build window if it doesn't exist or current word drifted out of it
+                    const localIdx = this.currentIndex - this.rollingWindowStart;
+                    const windowEnd = this.rollingWindowStart + this.rollingWindowSize;
+                    const out_of_window = localIdx < 0 || localIdx >= this.rollingWindowSize;
+                    // Only rebuild for drift if there are actually more words on that side
+                    // (otherwise we'd rebuild on every tick near the start/end of the book)
+                    const more_on_left = this.rollingWindowStart > 0;
+                    const more_on_right = windowEnd < this.words.length;
+                    const near_end = more_on_right && localIdx > this.rollingWindowSize - this.rollingRebuildThreshold;
+                    const near_start = more_on_left && localIdx < this.rollingRebuildThreshold;
+                    if (out_of_window || !this.rollingRibbon.firstChild) {
+                        this.renderRollingWindow();
+                    } else if (near_end || near_start) {
+                        // Rebuild quietly — position recalculation happens inside
+                        this.renderRollingWindow();
+                    } else {
+                        this.updateRollingPosition(tickInterval);
+                    }
+                } else {
+                    this.displayWord();
+                }
+            }
+            
+            displayWord() {
+                if (this.words.length === 0) return;
+                this.wordDisplay.textContent = this.words[this.currentIndex];
+            }
+            
+            // ── Rolling mode ──────────────────────────────────────────────────
+            /**
+             * Build a window of ~41 words around currentIndex and center it.
+             * Called on mode switch, book load, seek, and when drift gets near edges.
+             */
+            renderRollingWindow() {
+                if (this.words.length === 0) {
+                    this.rollingRibbon.innerHTML = '';
+                    return;
+                }
+                
+                // Center current word in the window; clamp at book edges
+                const half = Math.floor(this.rollingWindowSize / 2);
+                let start = Math.max(0, this.currentIndex - half);
+                const end = Math.min(this.words.length, start + this.rollingWindowSize);
+                // Re-expand start if we hit the right edge (keeps window full size)
+                start = Math.max(0, end - this.rollingWindowSize);
+                this.rollingWindowStart = start;
+                
+                const parts = [];
+                for (let i = start; i < end; i++) {
+                    const cls = i === this.currentIndex ? 'rolling-word current' : 'rolling-word';
+                    // Escape — words come from the API but defensive HTML-escape anyway
+                    const safe = String(this.words[i])
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                    parts.push(`<span class="${cls}" data-idx="${i}">${safe}</span>`);
+                }
+                this.rollingRibbon.innerHTML = parts.join('');
+                
+                // Snap into position (no transition) on rebuild
+                this.updateRollingPosition(0);
+            }
+            
+            /**
+             * Translate the ribbon so the current word sits at the horizontal center
+             * of the reader container. On ticks, pass the interval duration to get a
+             * smooth linear slide; on seeks/rebuilds, pass 0 to snap instantly.
+             */
+            updateRollingPosition(tickInterval = 0) {
+                const currentEl = this.rollingRibbon.querySelector(`[data-idx="${this.currentIndex}"]`);
+                if (!currentEl) return;
+                
+                // Update .current class on the ribbon
+                const prev = this.rollingRibbon.querySelector('.rolling-word.current');
+                if (prev && prev !== currentEl) prev.classList.remove('current');
+                currentEl.classList.add('current');
+                
+                // Center math: offsetLeft is relative to ribbon's padding box
+                const containerWidth = this.rollingDisplay.clientWidth;
+                const wordLeft = currentEl.offsetLeft;
+                const wordWidth = currentEl.offsetWidth;
+                const offset = (containerWidth / 2) - wordLeft - (wordWidth / 2);
+                
+                if (tickInterval > 0) {
+                    this.rollingRibbon.style.transition = `transform ${tickInterval}ms linear`;
+                } else {
+                    this.rollingRibbon.style.transition = 'none';
+                }
+                this.rollingRibbon.style.transform = `translateX(${offset}px)`;
+            }
+            
+            // ── Reading mode switching ────────────────────────────────────────
+            setReadingMode(mode) {
+                if (mode !== 'word' && mode !== 'rolling') return;
+                const wasPlaying = this.isPlaying;
+                if (wasPlaying) this.pause();
+                
+                this.readingMode = mode;
+                localStorage.setItem('speedReaderMode', mode);
+                this.applyReadingMode();
+                
+                // Sync UI + content for the new mode
+                if (this.words.length > 0) {
+                    if (mode === 'rolling') {
+                        this.renderRollingWindow();
+                    } else {
+                        this.displayWord();
+                        // Clear any leftover transform state on the ribbon
+                        this.rollingRibbon.style.transition = 'none';
+                        this.rollingRibbon.style.transform = '';
+                    }
+                }
+                
+                if (wasPlaying) this.play();
+            }
+            
+            applyReadingMode() {
+                // Toggle body class for CSS (show/hide the right container)
+                if (this.readingMode === 'rolling') {
+                    document.body.classList.add('rolling-mode');
+                } else {
+                    document.body.classList.remove('rolling-mode');
+                }
+                
+                // Update the segmented control active state
+                const btns = this.modeToggle.querySelectorAll('.mode-btn');
+                btns.forEach(b => {
+                    b.classList.toggle('active', b.dataset.mode === this.readingMode);
+                });
+            }
+            
+            // ── Chapter sync ──────────────────────────────────────────────────
+            /** Returns the index (in this.chapters) of the chapter containing currentIndex, or -1. */
+            getCurrentChapterIndex() {
+                if (!this.chapters || this.chapters.length === 0) return -1;
+                // Chapters are ordered by startIndex ascending; walk from the end.
+                for (let i = this.chapters.length - 1; i >= 0; i--) {
+                    if (this.currentIndex >= this.chapters[i].startIndex) return i;
+                }
+                return 0;
+            }
+            
+            /**
+             * Update the chapter dropdown to reflect current reading position.
+             * Programmatic value assignment does NOT fire 'change', so no risk of
+             * re-entering jumpToChapter().
+             */
+            updateChapterSelection() {
+                const select = document.getElementById('chapterSelect');
+                if (!select) return;
+                const idx = this.getCurrentChapterIndex();
+                const target = String(idx);
+                if (select.value !== target) select.value = target;
             }
             
             toggleTheme() {
@@ -1516,7 +1829,8 @@
                 
                 if (this.chapters.length === 0) return;
                 
-                // Create chapter selector UI
+                // Chapter selector is now the LAST control group (after Controls,
+                // Reading Mode, and Reading Speed). We append to the .controls div.
                 const selectorHTML = `
                     <div id="chapterSelector" class="control-group" style="animation: fadeIn 0.3s ease;">
                         <label>Jump to Chapter</label>
@@ -1524,7 +1838,6 @@
                                 color: var(--text-primary); border: 1px solid rgba(255,255,255,0.1); 
                                 border-radius: 0.5rem; font-family: 'Crimson Pro', serif; font-size: 1rem;
                                 cursor: pointer;">
-                            <option value="-1">-- Select a chapter --</option>
                             ${this.chapters.map((ch, idx) => 
                                 `<option value="${idx}">${ch.title}</option>`
                             ).join('')}
@@ -1532,10 +1845,8 @@
                     </div>
                 `;
                 
-                // Insert before the controls group
                 const controlsDiv = document.querySelector('.controls');
-                const firstControlGroup = controlsDiv.querySelector('.control-group');
-                firstControlGroup.insertAdjacentHTML('beforebegin', selectorHTML);
+                controlsDiv.insertAdjacentHTML('beforeend', selectorHTML);
                 
                 // Add event listener
                 document.getElementById('chapterSelect').addEventListener('change', (e) => {
@@ -1544,6 +1855,9 @@
                         this.jumpToChapter(chapterIndex);
                     }
                 });
+                
+                // Reflect the current position in the dropdown immediately
+                this.updateChapterSelection();
             }
             
             hideChapterSelector() {
@@ -1557,7 +1871,9 @@
                 this.pause();
                 this.currentIndex = this.chapters[chapterIndex].startIndex;
                 this.updateProgress();
-                this.displayWord();
+                this.displayCurrent();
+                this.updateChapterSelection();
+                if (this.readingMode === 'rolling') this.renderRollingWindow();
                 this.showStatus(`Jumped to: ${this.chapters[chapterIndex].title}`, 'info');
             }
             
