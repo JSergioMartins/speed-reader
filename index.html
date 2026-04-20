@@ -342,19 +342,14 @@
             /* transition is set dynamically in JS to match WPM */
         }
         
+        /* All ribbon words render identically to the one-word popup: same
+           color, same weight, no dimming or "current word" highlight. The
+           .current class is still applied in JS for logic/debugging, but
+           has no visual effect. Edge fade comes from the container's mask. */
         .rolling-word {
-            color: var(--text-secondary);
-            opacity: 0.4;
-            font-weight: 400;
-            flex-shrink: 0;
-            /* ONLY the highlight transitions — the ribbon translate is what creates motion */
-            transition: color 0.25s ease, opacity 0.25s ease, font-weight 0s;
-        }
-        
-        .rolling-word.current {
             color: var(--text-primary);
-            opacity: 1;
             font-weight: 600;
+            flex-shrink: 0;
         }
         
         /* ── Reading Mode Toggle (segmented control) ────────────────────── */
@@ -632,6 +627,13 @@
             -webkit-appearance: none;
             cursor: pointer;
             position: relative;
+            transition: opacity 0.2s ease;
+        }
+        
+        /* Locked while playing — still shows progress, can't be dragged */
+        .progress-slider.locked {
+            pointer-events: none;
+            opacity: 0.6;
         }
         
         .progress-slider::-webkit-slider-thumb {
@@ -1171,7 +1173,7 @@
             }
             
             // User data methods
-            async saveSession(bookHash, bookTitle, currentIndex, totalWords, wpm, theme, currentChapter = null) {
+            async saveSession(bookHash, bookTitle, currentIndex, totalWords, wpm, theme, currentChapter = null, wordsReadDelta = 0) {
                 if (!this.isAuthenticated()) return null;
                 
                 const response = await fetch(`${API_URL}/user/sessions`, {
@@ -1184,7 +1186,10 @@
                         total_words: totalWords,
                         wpm: wpm,
                         theme: theme,
-                        current_chapter: currentChapter
+                        current_chapter: currentChapter,
+                        // Words actually displayed during playback since last save.
+                        // Zero for seeks/chapter jumps/rewinds — prevents stats inflation.
+                        words_read_delta: wordsReadDelta,
                     })
                 });
                 
@@ -1261,6 +1266,11 @@
                 this.rollingWindowSize = 41;      // odd number so "current" can sit at center
                 this.rollingRebuildThreshold = 8; // rebuild window when current word gets this close to an edge
                 
+                // Stats: words ACTUALLY DISPLAYED during playback since last save.
+                // Incremented ONLY inside _startInterval tick. Reset on save.
+                // Seeks via slider / chapter / arrow keys never touch this.
+                this.sessionWordsRead = 0;
+                
                 this.auth = new AuthManager(() => this.updateAuthUI());
                 
                 this.initElements();
@@ -1329,17 +1339,31 @@
                 this.rewindBtn.addEventListener('click', () => this.rewind());
                 this.clearBtn.addEventListener('click', () => this.clear());
                 
-                // Progress slider
+                // Progress slider. Two listeners:
+                //   'input'  → fires continuously during drag. Updates display only;
+                //              calls pause() on the first tick if playing (pause() itself
+                //              only saves on play→pause transition, so no save storm).
+                //   'change' → fires ONCE when drag ends. Persists the new position
+                //              with countReadWords=false so the seek doesn't inflate stats.
                 this.progressSlider.addEventListener('input', (e) => {
                     if (this.words.length === 0) return;
-                    this.pause();
+                    // Don't let interaction happen while locked (belt-and-suspenders —
+                    // CSS pointer-events:none should already block this)
+                    if (this.progressSlider.classList.contains('locked')) return;
+                    if (this.isPlaying) this.pause();
                     const sliderValue = parseInt(e.target.value);
-                    this.currentIndex = sliderValue;
-                    this.currentIndex = Math.max(0, Math.min(this.currentIndex, this.words.length - 1));
+                    this.currentIndex = Math.max(0, Math.min(sliderValue, this.words.length - 1));
                     this.displayCurrent();
                     this.updateProgressDisplay();
                     this.updateChapterSelection();
                     if (this.readingMode === 'rolling') this.renderRollingWindow();
+                });
+                
+                this.progressSlider.addEventListener('change', () => {
+                    // Persist the seeked position. countReadWords=false because the
+                    // drag itself doesn't display words during playback.
+                    if (this.words.length === 0) return;
+                    if (this.auth.isAuthenticated()) this.saveProgress(false);
                 });
                 
                 // Theme toggle
@@ -1485,9 +1509,10 @@
                     this.updateProgress();
                     this.displayCurrent();
                     
-                    // Only create a new session entry for books we haven't seen
+                    // Only create a new session entry for books we haven't seen.
+                    // This is a positional save (no reading has happened) — delta 0.
                     if (this.auth.isAuthenticated() && !restored) {
-                        await this.saveProgress();
+                        await this.saveProgress(false);
                     }
                     
                     if (this.chapters.length > 0) {
@@ -1537,6 +1562,8 @@
                 
                 this.isPlaying = true;
                 this.playPauseBtn.innerHTML = '⏸ Pause';
+                // Lock the progress slider to prevent miss-clicks during playback
+                this.progressSlider.classList.add('locked');
                 
                 // Make sure the rolling ribbon is rendered and positioned before we start
                 if (this.readingMode === 'rolling') {
@@ -1555,11 +1582,13 @@
                 this.intervalId = setInterval(() => {
                     if (this.currentIndex < this.words.length - 1) {
                         this.currentIndex++;
+                        this.sessionWordsRead++;  // count this displayed word for stats
                         this.displayCurrent(interval);
                         this.updateProgress();
                         this.updateChapterSelection();
                     } else {
                         // Show the last word, then stop
+                        this.sessionWordsRead++;  // the final word still counts
                         this.displayCurrent(0);
                         this.pause();
                         this.showStatus('Reading complete! 🎉', 'info');
@@ -1581,16 +1610,21 @@
             }
             
             pause() {
+                const wasPlaying = this.isPlaying;
                 this.isPlaying = false;
                 this.playPauseBtn.innerHTML = '▶ Play';
+                // Unlock slider so user can seek while paused
+                this.progressSlider.classList.remove('locked');
                 if (this.intervalId) {
                     clearInterval(this.intervalId);
                     this.intervalId = null;
                 }
                 
-                // Stop auto-save and save current progress
                 this.stopAutoSave();
-                if (this.auth.isAuthenticated() && this.words.length > 0) {
+                // Only save on actual play→pause transition. Without this guard,
+                // per-tick input events on the slider (which call pause()) would
+                // fire one save PER drag tick — tons of wasted network.
+                if (wasPlaying && this.auth.isAuthenticated() && this.words.length > 0) {
                     this.saveProgress();
                 }
             }
@@ -1601,6 +1635,11 @@
                 this.updateProgress();
                 this.displayCurrent();
                 this.updateChapterSelection();
+                // Persist the rewind — pause() only saves on a play→pause transition,
+                // so if the user was already paused we'd lose the new position on close.
+                if (this.auth.isAuthenticated() && this.words.length > 0) {
+                    this.saveProgress(false);
+                }
             }
             
             clear() {
@@ -1874,6 +1913,8 @@
                 this.displayCurrent();
                 this.updateChapterSelection();
                 if (this.readingMode === 'rolling') this.renderRollingWindow();
+                // Persist the jump — chapter jumps are seeks, not reading.
+                if (this.auth.isAuthenticated()) this.saveProgress(false);
                 this.showStatus(`Jumped to: ${this.chapters[chapterIndex].title}`, 'info');
             }
             
@@ -2075,9 +2116,22 @@
                 }
             }
             
-            // Auto-save progress
-            async saveProgress() {
+            // Auto-save progress.
+            //   countReadWords = true  → credit sessionWordsRead to stats (called from
+            //                            playback pause, autosave tick, completion).
+            //   countReadWords = false → purely positional save (slider seek, chapter
+            //                            jump, rewind, book load). Sends delta=0.
+            async saveProgress(countReadWords = true) {
                 if (!this.auth.isAuthenticated() || !this.currentBookHash) return;
+                
+                // Atomically read-and-reset the counter BEFORE awaiting the network
+                // call. If a tick fires while we're in-flight, it accumulates into
+                // the next save — we won't double-count it and we won't lose it.
+                let delta = 0;
+                if (countReadWords) {
+                    delta = this.sessionWordsRead;
+                    this.sessionWordsRead = 0;
+                }
                 
                 try {
                     const session = await this.auth.saveSession(
@@ -2086,13 +2140,19 @@
                         this.currentIndex,
                         this.words.length,
                         this.wpm,
-                        this.theme
+                        this.theme,
+                        null,   // currentChapter — not tracked yet on the client
+                        delta,
                     );
                     
                     if (session) {
                         this.currentSessionId = session.id;
                     }
                 } catch (error) {
+                    // Network/server error: we've already zeroed the counter, so those
+                    // words are lost from stats. Acceptable tradeoff — the alternative
+                    // (reset after await) would double-count any ticks that happened
+                    // during the round-trip.
                     console.error('Failed to save progress:', error);
                 }
             }
