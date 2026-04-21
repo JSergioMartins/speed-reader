@@ -1261,10 +1261,12 @@
                 // Reading mode: 'word' (one-at-a-time, instant) or 'rolling' (continuous ribbon)
                 this.readingMode = localStorage.getItem('speedReaderMode') || 'word';
                 
-                // Rolling-mode state
-                this.rollingWindowStart = 0;      // absolute index of first word in the rendered window
-                this.rollingWindowSize = 41;      // odd number so "current" can sit at center
-                this.rollingRebuildThreshold = 8; // rebuild window when current word gets this close to an edge
+                // Rolling-mode state. Larger window = rarer rebuilds = smoother playback.
+                // At 301 words with threshold 80, we rebuild roughly every 220 words
+                // (vs every 13 with the old 41/8 config) — barely ever during reading.
+                this.rollingWindowStart = 0;       // absolute index of first word in the rendered window
+                this.rollingWindowSize = 301;      // odd number so "current" can sit at center
+                this.rollingRebuildThreshold = 80; // rebuild when current word gets this close to an edge
                 
                 // Stats: words ACTUALLY DISPLAYED during playback since last save.
                 // Incremented ONLY inside _startInterval tick. Reset on save.
@@ -1463,8 +1465,16 @@
                     const formData = new FormData();
                     formData.append('file', file);
                     
+                    // Include auth if available. DO NOT set Content-Type — the
+                    // browser must set it with the multipart boundary itself.
+                    const headers = {};
+                    if (this.auth.isAuthenticated()) {
+                        headers['Authorization'] = `Bearer ${this.auth.token}`;
+                    }
+                    
                     const response = await fetch(`${API_URL}/parse`, {
                         method: 'POST',
+                        headers,
                         body: formData,
                     });
                     
@@ -1682,16 +1692,20 @@
                     const windowEnd = this.rollingWindowStart + this.rollingWindowSize;
                     const out_of_window = localIdx < 0 || localIdx >= this.rollingWindowSize;
                     // Only rebuild for drift if there are actually more words on that side
-                    // (otherwise we'd rebuild on every tick near the start/end of the book)
                     const more_on_left = this.rollingWindowStart > 0;
                     const more_on_right = windowEnd < this.words.length;
                     const near_end = more_on_right && localIdx > this.rollingWindowSize - this.rollingRebuildThreshold;
                     const near_start = more_on_left && localIdx < this.rollingRebuildThreshold;
+                    
                     if (out_of_window || !this.rollingRibbon.firstChild) {
-                        this.renderRollingWindow();
+                        // Big discontinuity (seek, first build): snap, don't try to preserve
+                        this.renderRollingWindow(0);
                     } else if (near_end || near_start) {
-                        // Rebuild quietly — position recalculation happens inside
-                        this.renderRollingWindow();
+                        // Drift-triggered rebuild during playback: preserve visual position
+                        // so the rebuild is invisible to the user. Passing tickInterval > 0
+                        // tells renderRollingWindow to kick off the next animation in the
+                        // same frame rather than freezing for a tick.
+                        this.renderRollingWindow(tickInterval);
                     } else {
                         this.updateRollingPosition(tickInterval);
                     }
@@ -1707,27 +1721,44 @@
             
             // ── Rolling mode ──────────────────────────────────────────────────
             /**
-             * Build a window of ~41 words around currentIndex and center it.
-             * Called on mode switch, book load, seek, and when drift gets near edges.
+             * Build a window of ~301 words around currentIndex.
+             *
+             * @param {number} tickInterval - If > 0 AND there was a previous DOM,
+             *   preserve the current word's ON-SCREEN position across the rebuild
+             *   (so the user sees no jump) and immediately kick off the next
+             *   animation. This is what makes mid-playback rebuilds invisible.
+             *   If 0, just snap — used for seeks, book loads, first renders.
              */
-            renderRollingWindow() {
+            renderRollingWindow(tickInterval = 0) {
                 if (this.words.length === 0) {
                     this.rollingRibbon.innerHTML = '';
                     return;
+                }
+                
+                // BEFORE rebuild: measure where the current word is RIGHT NOW on screen
+                // (mid-animation). We'll re-place it at the same screen position after
+                // the rebuild so the user sees zero discontinuity.
+                let preservedScreenCenterX = null;
+                if (tickInterval > 0 && this.rollingRibbon.firstChild) {
+                    const oldCurrent = this.rollingRibbon.querySelector(`[data-idx="${this.currentIndex}"]`);
+                    if (oldCurrent) {
+                        const r = oldCurrent.getBoundingClientRect();
+                        preservedScreenCenterX = r.left + r.width / 2;
+                    }
                 }
                 
                 // Center current word in the window; clamp at book edges
                 const half = Math.floor(this.rollingWindowSize / 2);
                 let start = Math.max(0, this.currentIndex - half);
                 const end = Math.min(this.words.length, start + this.rollingWindowSize);
-                // Re-expand start if we hit the right edge (keeps window full size)
-                start = Math.max(0, end - this.rollingWindowSize);
+                start = Math.max(0, end - this.rollingWindowSize);  // re-expand left if we hit right edge
                 this.rollingWindowStart = start;
                 
+                // Build the DOM. Using string concat + single innerHTML is much faster
+                // than hundreds of createElement/appendChild calls.
                 const parts = [];
                 for (let i = start; i < end; i++) {
                     const cls = i === this.currentIndex ? 'rolling-word current' : 'rolling-word';
-                    // Escape — words come from the API but defensive HTML-escape anyway
                     const safe = String(this.words[i])
                         .replace(/&/g, '&amp;')
                         .replace(/</g, '&lt;')
@@ -1736,8 +1767,44 @@
                 }
                 this.rollingRibbon.innerHTML = parts.join('');
                 
-                // Snap into position (no transition) on rebuild
-                this.updateRollingPosition(0);
+                if (preservedScreenCenterX !== null) {
+                    // SEAMLESS REBUILD: match the previous visual position exactly.
+                    this._snapAndAnimate(preservedScreenCenterX, tickInterval);
+                } else {
+                    // Discontinuous render (seek/load): snap to center, no animation.
+                    this.updateRollingPosition(0);
+                }
+            }
+            
+            /**
+             * Two-step transform: (1) snap the ribbon so the current word sits at
+             * `preservedScreenCenterX` on the page, (2) in the same frame, set up
+             * the transition that will carry it to true center over tickInterval ms.
+             *
+             * Without this, a rebuild mid-animation causes the ribbon to freeze for
+             * a full tick before the next one fires — the visible "break".
+             */
+            _snapAndAnimate(preservedScreenCenterX, tickInterval) {
+                const currentEl = this.rollingRibbon.querySelector(`[data-idx="${this.currentIndex}"]`);
+                if (!currentEl) return;
+                
+                const displayRect = this.rollingDisplay.getBoundingClientRect();
+                const targetLocalX = preservedScreenCenterX - displayRect.left;
+                const untranslatedCenter = currentEl.offsetLeft + currentEl.offsetWidth / 2;
+                
+                // Step 1: snap to preserved position (invisible — the current word
+                // ends up exactly where it was before the DOM swap)
+                this.rollingRibbon.style.transition = 'none';
+                this.rollingRibbon.style.transform = `translateX(${targetLocalX - untranslatedCenter}px)`;
+                
+                // Force the browser to commit the snap before we set the new transition
+                void this.rollingRibbon.offsetWidth;
+                
+                // Step 2: animate to true center over the remaining tick time
+                const displayCenter = displayRect.width / 2;
+                const targetTranslate = displayCenter - untranslatedCenter;
+                this.rollingRibbon.style.transition = `transform ${tickInterval}ms linear`;
+                this.rollingRibbon.style.transform = `translateX(${targetTranslate}px)`;
             }
             
             /**
@@ -1749,22 +1816,18 @@
                 const currentEl = this.rollingRibbon.querySelector(`[data-idx="${this.currentIndex}"]`);
                 if (!currentEl) return;
                 
-                // Update .current class on the ribbon
+                // Update .current class (kept in DOM for bookkeeping; no visual effect)
                 const prev = this.rollingRibbon.querySelector('.rolling-word.current');
                 if (prev && prev !== currentEl) prev.classList.remove('current');
                 currentEl.classList.add('current');
                 
-                // Center math: offsetLeft is relative to ribbon's padding box
                 const containerWidth = this.rollingDisplay.clientWidth;
-                const wordLeft = currentEl.offsetLeft;
-                const wordWidth = currentEl.offsetWidth;
-                const offset = (containerWidth / 2) - wordLeft - (wordWidth / 2);
+                const untranslatedCenter = currentEl.offsetLeft + currentEl.offsetWidth / 2;
+                const offset = (containerWidth / 2) - untranslatedCenter;
                 
-                if (tickInterval > 0) {
-                    this.rollingRibbon.style.transition = `transform ${tickInterval}ms linear`;
-                } else {
-                    this.rollingRibbon.style.transition = 'none';
-                }
+                this.rollingRibbon.style.transition = tickInterval > 0
+                    ? `transform ${tickInterval}ms linear`
+                    : 'none';
                 this.rollingRibbon.style.transform = `translateX(${offset}px)`;
             }
             
