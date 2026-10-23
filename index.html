@@ -15,11 +15,15 @@
     <!-- Manifest -->
     <link rel="manifest" href="manifest.json">
     
+    <!-- Fontes: carregadas cedo para a troca de fonte (fallback → Crimson Pro) acontecer antes do primeiro uso -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@500;700&display=swap">
+    
     <!-- iOS Icons -->
     <link rel="apple-touch-icon" href="icon-192.png">
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=JetBrains+Mono:wght@500;700&display=swap');
         
         :root {
             --bg-dark: #0a0e1a;
@@ -146,14 +150,8 @@
             background: 
                 radial-gradient(circle at 20% 50%, rgba(0, 255, 157, 0.05) 0%, transparent 50%),
                 radial-gradient(circle at 80% 80%, rgba(251, 191, 36, 0.05) 0%, transparent 50%);
-            animation: gradientShift 20s ease infinite;
             pointer-events: none;
             z-index: 0;
-        }
-        
-        @keyframes gradientShift {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            50% { transform: translate(-5%, -5%) rotate(5deg); }
         }
         
         .container {
@@ -502,23 +500,7 @@
             overflow: hidden;
         }
         
-        button::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
-        }
-        
-        button:active::before {
-            width: 300px;
-            height: 300px;
-        }
+        #playPauseBtn { min-width: 10.5rem; }
         
         .btn-primary {
             background: var(--accent);
@@ -894,6 +876,14 @@
                 transform: translateY(0);
             }
         }
+
+        /* Carregando: esconde só o que depende do login/tema até o script principal rodar */
+        body.booting .theme-toggle, body.booting .auth-section, body.booting #homeView { visibility: hidden; }
+
+        /* Abertura e troca de tema: tudo muda no mesmo quadro, sem transição (ver toggleTheme) */
+        body.no-transition *, body.no-transition *::before, body.no-transition *::after {
+            transition: none !important;
+        }
         
         /* ── Views ───────────────────────────────────────────────────── */
         [hidden] { display: none !important; }
@@ -1096,9 +1086,8 @@
         .cover-progress span { display: block; height: 100%; background: var(--gold); }
         .book-meta { margin-top: 0.5rem; min-height: 1.2em; font-size: 0.88rem; line-height: 1.25; color: var(--text-secondary); }
         
-        .cover.skeleton { background: var(--bg-medium); background-image: none; box-shadow: none; animation: skeletonPulse 1.4s ease-in-out infinite; }
+        .cover.skeleton { background: var(--bg-medium); background-image: none; box-shadow: none; }
         .cover.skeleton::after { content: none; }
-        @keyframes skeletonPulse { 50% { opacity: 0.55; } }
         
         .results-head { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
         .results-note { color: var(--text-secondary); font-size: 1rem; }
@@ -1362,7 +1351,6 @@
         
         @media (prefers-reduced-motion: reduce) {
             .drawer, .drawer-backdrop, .cover, .shelf-track { transition: none; scroll-behavior: auto; }
-            .cover.skeleton { animation: none; }
         }
         
         /* Responsive */
@@ -1409,6 +1397,20 @@
     </style>
 </head>
 <body>
+    <script>
+        // Antes de qualquer conteúdo: evita piscar do tema escuro para o claro ao carregar
+        try { if (localStorage.getItem('speedReaderTheme') !== 'night') document.body.classList.add('day-theme'); }
+        catch (e) { document.body.classList.add('day-theme'); }
+        // Até o app saber se está logado, o que depende disso fica invisível: num celular lento o
+        // navegador pode pintar a página no meio da leitura do HTML e mostrar "Entrar" por um instante.
+        // Ao revelar, nada anima (os botões têm transição em 'all', que atrasaria um quadro).
+        document.body.classList.add('booting', 'no-transition');
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.classList.remove('booting');
+            void document.body.offsetHeight;
+            requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove('no-transition')));
+        });
+    </script>
     <div class="container">
         <header>
             <button class="icon-btn theme-toggle" id="themeToggle" aria-label="Alternar tema claro/escuro">
@@ -1631,16 +1633,33 @@
             constructor(onReady) {
                 this.token = localStorage.getItem('authToken');
                 this.user = null;
+                if (this.token && AuthManager.tokenExpired(this.token)) this.logout();
+                // Perfil salvo no aparelho: o cabeçalho (avatar, PRO) já abre certo
+                // enquanto /auth/me responde, em vez de aparecer aos pedaços.
+                if (this.token) {
+                    try { this.user = JSON.parse(localStorage.getItem('speedReaderUser') || 'null'); }
+                    catch (e) { this.user = null; }
+                }
                 this._onReady = onReady || (() => {});
                 this.init();
             }
-            
+
+            /** O token (JWT) já venceu? Lido do próprio token, sem chamar o servidor. */
+            static tokenExpired(token) {
+                try {
+                    const p = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+                    return !!p.exp && p.exp * 1000 < Date.now();
+                } catch (e) { return false; }
+            }
+
             async init() {
                 if (this.token) {
                     try {
                         await this.loadUser();
                     } catch (error) {
-                        this.logout();
+                        // Só sai da conta quando o servidor recusa o token. Sem internet ou
+                        // com o servidor fora do ar, continua logado com o perfil salvo.
+                        if (!this.user || [401, 403, 404].includes(error.status)) this.logout();
                     }
                 }
                 // Defer: with no token this runs synchronously inside the
@@ -1716,16 +1735,18 @@
                     headers: this.getHeaders()
                 });
                 
-                if (!response.ok) throw new Error('Failed to load user');
-                
+                if (!response.ok) throw Object.assign(new Error('Failed to load user'), { status: response.status });
+
                 this.user = await response.json();
+                try { localStorage.setItem('speedReaderUser', JSON.stringify(this.user)); } catch (e) {}
                 return this.user;
             }
-            
+
             logout() {
                 this.token = null;
                 this.user = null;
                 localStorage.removeItem('authToken');
+                try { localStorage.removeItem('speedReaderUser'); } catch (e) {}
             }
             
             // User data methods
@@ -1775,15 +1796,9 @@
             
             async getSessions() {
                 if (!this.isAuthenticated()) return [];
-                
-                const response = await fetch(`${API_URL}/user/sessions`, {
-                    headers: this.getHeaders()
-                });
-                
-                if (response.ok) {
-                    return await response.json();
-                }
-                return [];
+                // Falha vira erro: quem chama precisa saber que NÃO sabe o progresso salvo.
+                // (Tratar como "nenhum progresso" abria o livro no começo e gravava 0 por cima.)
+                return this.get('/user/sessions');
             }
             
             async getStats() {
@@ -1873,11 +1888,12 @@
                 
                 // Recarregou a página no meio da leitura (#ler): volta limpo para a biblioteca
                 if (location.hash === '#ler') history.replaceState(null, '', location.pathname + location.search);
-                // Já logado: mostra o esqueleto da biblioteca enquanto /auth/me responde
+                // Já logado: cabeçalho e biblioteca certos desde o primeiro quadro (perfil
+                // salvo no aparelho), com o esqueleto das estantes enquanto o servidor responde
                 if (this.auth.token) {
-                    this.library.hidden = false;
                     this.homeRows.innerHTML = this.ghostShelves(3);
-                    this.authBtn.style.display = 'none';
+                    if (this.auth.user) this.updateAuthUI();
+                    else { this.library.hidden = false; this.authBtn.style.display = 'none'; }
                 }
             }
             
@@ -1982,7 +1998,6 @@
                     this.displayCurrent();
                     this.updateProgressDisplay();
                     this.updateChapterSelection();
-                    if (this.readingMode === 'rolling') this.renderRollingWindow();
                 });
                 
                 this.progressSlider.addEventListener('change', () => {
@@ -1995,12 +2010,28 @@
                 // Theme toggle
                 this.themeToggle.addEventListener('click', () => this.toggleTheme());
                 
+                // Rolling: a fonte (Crimson Pro) pode chegar depois da 1ª medição →
+                // larguras mudam → remede mantendo a posição exata de leitura.
+                if (document.fonts) {
+                    const remeasure = () => {
+                        if (this.readingMode === 'rolling' && this.words.length && this.rollCenters) this.renderRollingWindow(true);
+                    };
+                    document.fonts.ready.then(remeasure);
+                    document.fonts.addEventListener('loadingdone', remeasure);
+                }
+                
+                // Aba escondida: pausa (senão o modo palavra seguiria 1 palavra/s e contaria
+                // palavras que ninguém leu). Ao voltar, o leitor continua pausado onde parou.
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden && this.isPlaying) this.pause();
+                });
+                
                 // Rolling mode: measured word centers go stale on resize → rebuild in place
                 let resizeTimer = null;
                 window.addEventListener('resize', () => {
                     if (this.readingMode !== 'rolling' || this.words.length === 0) return;
                     clearTimeout(resizeTimer);
-                    resizeTimer = setTimeout(() => this.renderRollingWindow(this.isPlaying), 120);
+                    resizeTimer = setTimeout(() => this.renderRollingWindow(true), 120);
                 });
                 
                 // File upload - require login
@@ -2132,26 +2163,23 @@
                         this.displayCurrent();
                         this.updateProgress();
                         this.updateChapterSelection();
-                        if (this.readingMode === 'rolling') this.renderRollingWindow();
                     } else if (e.code === 'ArrowRight') {
                         this.currentIndex = Math.min(this.words.length - 1, this.currentIndex + 10);
                         this.displayCurrent();
                         this.updateProgress();
                         this.updateChapterSelection();
-                        if (this.readingMode === 'rolling') this.renderRollingWindow();
                     }
                 });
             }
             
             showStatus(message, type = 'info') {
-                this.statusContainer.innerHTML = `
-                    <div class="status-message status-${type}">
-                        ${message}
-                    </div>
-                `;
-                setTimeout(() => {
-                    this.statusContainer.innerHTML = '';
-                }, 6000);
+                clearTimeout(this._statusTimer);
+                // Aviso já na tela: troca só o texto (criar outro faria ele sumir e reaparecer)
+                let box = this.statusContainer.firstElementChild;
+                if (!box) { box = document.createElement('div'); this.statusContainer.appendChild(box); }
+                box.className = `status-message status-${type}`;
+                box.textContent = message;
+                this._statusTimer = setTimeout(() => this.statusContainer.replaceChildren(), 6000);
             }
             
             async handleFileUpload(e) {
@@ -2199,7 +2227,6 @@
                     
                     const data = await response.json();
                     this.currentBook = null;
-                    this.showReader();
                     await this.loadBook(data, file.name.replace(/\.[^/.]+$/, ''), this.generateBookHash(file.name, data.totalWords), 'Seu arquivo');
                 } catch (error) {
                     console.error('Parse error:', error);
@@ -2220,11 +2247,14 @@
                 if (btn) { btn.disabled = true; btn.textContent = item.cached ? 'Abrindo…' : 'Preparando o texto…'; }
                 this.pause();
                 try {
+                    // Texto e progresso salvo em paralelo; a tela troca uma vez só, já no lugar certo
+                    const sessions = this.auth.getSessions();
+                    sessions.catch(() => {});   // o erro é tratado no loadBook
                     const data = await this.auth.post(`/catalog/open/${encodeURIComponent(item.source)}/${encodeURIComponent(item.source_id)}`);
+                    await sessions.catch(() => {});
                     this.closeBookModal();
                     this.currentBook = item;
-                    this.showReader();
-                    await this.loadBook(data, item.title, `${item.source}:${item.source_id}`, item.author);
+                    await this.loadBook(data, item.title, `${item.source}:${item.source_id}`, item.author, sessions);
                 } catch (error) {
                     console.error('Catalog open error:', error);
                     this.showStatus(`Não deu para abrir "${item.title}": ${error.message}`, 'error');
@@ -2234,7 +2264,33 @@
             }
             
             /** Common path for upload + catalog: set words, restore progress, UI. */
-            async loadBook(data, title, hash, author = '') {
+            /**
+             * @param sessions - Promise da lista de progresso já pedida (openBook pede em
+             *   paralelo com o texto); sem ela, pede aqui.
+             */
+            async loadBook(data, title, hash, author = '', sessions = null) {
+                // ── Onde a pessoa parou: ANTES de mostrar o leitor ──────────
+                // Assim ele já abre no livro e na posição certos (antes aparecia o livro
+                // anterior por um instante e depois pulava). Se não der para saber, não
+                // abre: abrir no começo gravaria a posição 0 por cima do progresso salvo.
+                let existing = null;
+                if (this.auth.isAuthenticated()) {
+                    let list;
+                    try {
+                        list = await (sessions || this.auth.getSessions());
+                    } catch (e) {
+                        try {
+                            list = await this.auth.getSessions();   // falha passageira: tenta de novo
+                        } catch (e2) {
+                            console.error('Failed to restore progress:', e2);
+                            const why = !e2.status ? 'sem conexão com o servidor' : e2.status >= 500 ? 'o servidor não respondeu' : e2.message;
+                            this.showStatus(`Não deu para abrir "${title}": ${why}. Tente de novo.`, 'error');
+                            return false;
+                        }
+                    }
+                    existing = (list || []).find(s => s.book_hash === hash) || null;
+                }
+
                 try {
                     this.readerTitle.textContent = title;
                     this.readerAuthor.textContent = this.firstAuthor(author);
@@ -2246,44 +2302,30 @@
                     this.rollCenters = null;
                     this.currentBookTitle = title;
                     this.currentBookHash = hash;
-                    
-                    // ── Restore saved progress if user is logged in ─────────
+
                     let restored = false;
-                    if (this.auth.isAuthenticated()) {
-                        try {
-                            const sessions = await this.auth.getSessions();
-                            const existing = sessions.find(s => s.book_hash === this.currentBookHash);
-                            if (existing && existing.current_word_index > 0) {
-                                this.currentIndex = Math.min(existing.current_word_index, this.words.length - 1);
-                                this.currentSessionId = existing.id;
-                                // Restore WPM preference
-                                if (existing.wpm) {
-                                    this.wpm = existing.wpm;
-                                    this.wpmSlider.value = this.wpm;
-                                    this.wpmDisplay.textContent = `${this.wpm} WPM`;
-                                }
-                                restored = true;
-                            }
-                        } catch (e) {
-                            console.error('Failed to restore progress:', e);
+                    if (existing && existing.current_word_index > 0) {
+                        this.currentIndex = Math.min(existing.current_word_index, this.words.length - 1);
+                        this.currentSessionId = existing.id;
+                        // Restore WPM preference
+                        if (existing.wpm) {
+                            this.wpm = existing.wpm;
+                            this.wpmSlider.value = this.wpm;
+                            this.wpmDisplay.textContent = `${this.wpm} WPM`;
                         }
+                        restored = true;
                     }
-                    
-                    this.updateProgress();
-                    this.displayCurrent();
-                    
-                    // Only create a new session entry for books we haven't seen.
-                    // This is a positional save (no reading has happened) — delta 0.
-                    if (this.auth.isAuthenticated() && !restored) {
-                        await this.saveProgress(false);
-                    }
-                    
+
+                    // Tudo pronto: mostra o leitor de uma vez (capítulos, posição, velocidade)
                     if (this.chapters.length > 0) {
                         this.showChapterSelector();  // also calls updateChapterSelection()
                     } else {
                         this.hideChapterSelector();
                     }
-                    
+                    this.showReader();
+                    this.updateProgress();
+                    this.displayCurrent();
+
                     // ── Aviso curto ─────────────────────────────────────────
                     let status = `${title}: ${this.fmt(data.totalWords)} palavras`;
                     if (data.totalChapters > 0) status += `, ${data.totalChapters} capítulos`;
@@ -2293,15 +2335,29 @@
                         status += ` Retomado em ${pct}%.`;
                     }
                     this.showStatus(status, 'info');
+
+                    // Only create a new session entry for books we haven't seen.
+                    // This is a positional save (no reading has happened) — delta 0.
+                    if (this.auth.isAuthenticated() && !restored) {
+                        await this.saveProgress(false);
+                    }
+                    return true;
                 } catch (error) {
                     console.error('Load error:', error);
                     this.showStatus(`Não deu para carregar o livro: ${error.message}`, 'error');
+                    return false;
                 }
             }
             
             // ── Plan / quota / ranking ────────────────────────────────────────
             isPro() {
-                return !!(this.quota && this.quota.plan === 'pro');
+                if (this.quota) return this.quota.plan === 'pro';
+                // Antes da cota chegar: mesma regra do servidor (plan.is_pro), pelo perfil
+                const u = this.auth && this.auth.user;
+                if (!u || u.plan !== 'pro') return false;
+                if (!u.plan_expires_at) return true;
+                const s = String(u.plan_expires_at);
+                return new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(s) ? s : s + 'Z') > new Date();
             }
             
             /** Count one displayed word (playback only). Returns false once the free quota is hit. */
@@ -2343,8 +2399,9 @@
                     return;
                 }
                 const used = Math.min(this.quota.daily_limit, this.quota.words_today + this.wordsSinceQuota);
-                this.statsStrip.innerHTML = `<span>Hoje: <strong>${this.fmt(used)}</strong> de ${this.fmt(this.quota.daily_limit)} palavras grátis</span>
+                const html = `<span>Hoje: <strong>${this.fmt(used)}</strong> de ${this.fmt(this.quota.daily_limit)} palavras grátis</span>
                     <button type="button" class="link-btn" data-action="upgrade">Ler sem limite</button>`;
+                if (html !== this._stripHtml) { this._stripHtml = html; this.statsStrip.innerHTML = html; }
                 this.statsStrip.style.display = 'flex';
             }
             
@@ -2468,7 +2525,7 @@
             }
 
             shelfHtml(row) {
-                return `<section class="shelf" aria-label="${this.esc(row.title)}">
+                return `<section class="shelf" data-row="${this.esc(row.key)}" aria-label="${this.esc(row.title)}">
                         <div class="shelf-head"><h2 class="shelf-title">${this.esc(row.title)}</h2></div>
                         <button type="button" class="shelf-arrow prev" aria-label="Voltar" disabled>‹</button>
                         <div class="shelf-track">${row.items.map(i => this.bookCard(i)).join('')}</div>
@@ -2501,25 +2558,37 @@
             async loadHome(force = false) {
                 if (!this.auth.isAuthenticated() || this.searchQuery) return;
                 const lang = this.libLangCode;
-                const haveCache = this.homeData && this.homeLang === lang;
-                if (haveCache) this.renderHome(this.homeData);
-                else this.homeRows.innerHTML = this.ghostShelves(3);
-                if (haveCache && !force) return;
+                this.homeCache = this.homeCache || {};
+                const cached = this.homeCache[lang];
+                if (cached) this.renderHome(cached);               // não redesenha se já é o que está na tela
+                else if (!this.homeRows.querySelector('.cover.skeleton')) this.homeRows.innerHTML = this.ghostShelves(3);
+                if (cached && !force) return;
                 try {
                     const d = await this.auth.get(`/catalog/home?lang=${lang}`);
                     if (lang !== this.libLangCode || this.searchQuery) return;   // trocou de aba ou começou a buscar
+                    this.homeCache[lang] = d;
                     this.homeData = d;
                     this.homeLang = lang;
                     this.renderHome(d);
                     if (d.importing) this.pollCatalogStatus();
                 } catch (e) {
-                    if (!haveCache) {
-                        this.homeRows.innerHTML = `<p class="home-message">Não consegui carregar a biblioteca: ${this.esc(e.message)}. Recarregue a página para tentar de novo.</p>`;
+                    if (!cached) {
+                        const why = e.status ? this.esc(e.message) : 'sem conexão com o servidor';
+                        this.homeRows.innerHTML = `<p class="home-message">Não consegui carregar a biblioteca: ${why}. Recarregue a página para tentar de novo.</p>`;
                     }
                 }
             }
 
             renderHome(d) {
+                const sig = JSON.stringify([this.libLangCode, this.wpm, d.rows, d.importing, d.total]);
+                if (sig === this._homeSig && this.homeRows.querySelector('.shelf')) return;   // nada mudou: não pisca
+                this._homeSig = sig;
+                // guarda a rolagem horizontal de cada estante para restaurar depois
+                const scroll = {};
+                this.homeRows.querySelectorAll('.shelf[data-row]').forEach(sh => {
+                    const t = sh.querySelector('.shelf-track');
+                    if (t) scroll[sh.dataset.row] = t.scrollLeft;
+                });
                 this.itemIndex.clear();
                 const rows = d.rows || [];
                 const hasCatalog = rows.some(r => r.key !== 'continue');
@@ -2536,6 +2605,10 @@
                 html += rows.map(r => this.shelfHtml(r)).join('');
                 if (!hasCatalog && d.importing) html += this.ghostShelves(2);
                 this.homeRows.innerHTML = html;
+                this.homeRows.querySelectorAll('.shelf[data-row]').forEach(sh => {
+                    const t = sh.querySelector('.shelf-track');
+                    if (t && scroll[sh.dataset.row]) { t.style.scrollBehavior = 'auto'; t.scrollLeft = scroll[sh.dataset.row]; t.style.scrollBehavior = ''; }
+                });
                 this.wireShelves(this.homeRows);
             }
 
@@ -2546,7 +2619,7 @@
                     if (!this.auth.isAuthenticated()) return stop();
                     try {
                         const st = await this.auth.get('/catalog/status');
-                        if (!st.running) { stop(); this.homeData = null; this.loadHome(true); }
+                        if (!st.running) { stop(); this.homeCache = {}; this.loadHome(true); }
                     } catch (e) { /* tenta no próximo ciclo */ }
                 }, 8000);
             }
@@ -2569,14 +2642,17 @@
             async runSearch(page = 1) {
                 const q = this.searchQuery, lang = this.libLangCode;
                 if (!q) return;
-                if (page === 1) {
+                const showing = this.searchResults.querySelector('.book[data-key]');
+                if (page === 1 && !showing) {
                     const ghost = Array.from({ length: 12 }, () =>
                         '<div class="book" aria-hidden="true"><div class="cover skeleton"></div><div class="book-meta"></div></div>').join('');
                     this.searchResults.innerHTML = `<div class="results-grid">${ghost}</div>`;
                 }
+                this.searchResults.setAttribute('aria-busy', 'true');
                 try {
                     const d = await this.auth.get(`/catalog/search?q=${encodeURIComponent(q)}&lang=${lang}&page=${page}`);
                     if (q !== this.searchQuery || lang !== this.libLangCode) return;   // resposta velha
+                    this.searchResults.removeAttribute('aria-busy');
                     this.searchPage = page;
                     this.searchItems = page === 1 ? d.items : this.searchItems.concat(d.items);
                     if (!this.searchItems.length) {
@@ -2645,6 +2721,7 @@
             }
 
             closeDrawer() {
+                this._drawerHtml = null;
                 if (!this.drawer.classList.contains('open')) return;
                 this.drawer.classList.remove('open');
                 this.drawerBackdrop.classList.remove('open');
@@ -2670,7 +2747,10 @@
 
             renderDrawer() {
                 if (!this.drawer.classList.contains('open')) return;
-                this.drawerBody.innerHTML = this.drawerMode === 'leaderboard' ? this.leaderboardHtml() : this.profileHtml();
+                const html = this.drawerMode === 'leaderboard' ? this.leaderboardHtml() : this.profileHtml();
+                if (html === this._drawerHtml && this.drawerBody.firstChild) return;   // igual: não pisca
+                this._drawerHtml = html;
+                this.drawerBody.innerHTML = html;
             }
 
             profileHtml() {
@@ -2854,7 +2934,7 @@
                     await this.loadAdminStatus();
                     if (this.adminStatus && !this.adminStatus.running) {
                         clearInterval(this._adminPoll); this._adminPoll = null;
-                        this.homeData = null;
+                        this.homeCache = {};
                         this.loadHome(true);
                     }
                 }, 4000);
@@ -2944,19 +3024,17 @@
                     return;
                 }
                 
-                if (this.currentIndex >= this.words.length) {
+                // No fim do livro, "Ler" recomeça do início
+                if (this.currentIndex >= this.words.length - 1) {
                     this.currentIndex = 0;
+                    this.displayCurrent();
+                    this.updateProgress();
                 }
                 
                 this.isPlaying = true;
                 this.playPauseBtn.innerHTML = '⏸ Pausar';
                 // Lock the progress slider to prevent miss-clicks during playback
                 this.progressSlider.classList.add('locked');
-                
-                // Make sure the rolling ribbon is rendered and positioned before we start
-                if (this.readingMode === 'rolling') {
-                    this.renderRollingWindow();
-                }
                 
                 // Start auto-save interval
                 this.startAutoSave();
@@ -3063,11 +3141,16 @@
                 this.rollingRibbon.style.transform = `translate3d(${offset}px,0,0)`;
             }
 
-            _startInterval() {
-                if (this.intervalId) clearInterval(this.intervalId);
+            /**
+             * Modo palavra: troca a palavra no ritmo do WPM.
+             * @param {number|null} firstDelay - ms até a próxima troca. null = intervalo cheio
+             *   (ao dar play). Ao mudar o WPM no meio, vem só o que falta da palavra atual.
+             */
+            _startInterval(firstDelay = null) {
+                this._clearWordTimers();
                 const interval = 60000 / this.wpm; // ms per word
-                
-                this.intervalId = setInterval(() => {
+                const tick = () => {
+                    this._lastTickAt = performance.now();
                     if (this.currentIndex < this.words.length - 1) {
                         this.currentIndex++;
                         const ok = this._countWord();  // count this displayed word for stats
@@ -3076,28 +3159,35 @@
                         this.updateChapterSelection();
                         if (!ok) this._quotaExhausted();
                     } else {
-                        // Show the last word, then stop
-                        this._countWord();  // the final word still counts
-                        this.displayCurrent();
+                        // A última palavra já foi exibida (e contada) no tique anterior
                         this.pause();
                         this.showStatus('Leitura concluída! 🎉', 'info');
                     }
-                }, interval);
+                };
+                const repeat = () => { if (this.isPlaying) this.intervalId = setInterval(tick, interval); };
+                if (firstDelay == null) {
+                    this._lastTickAt = performance.now();
+                    repeat();
+                } else {
+                    this._kickId = setTimeout(() => { this._kickId = null; tick(); repeat(); }, firstDelay);
+                }
             }
-            
+
+            _clearWordTimers() {
+                if (this.intervalId) { clearInterval(this.intervalId); this.intervalId = null; }
+                if (this._kickId) { clearTimeout(this._kickId); this._kickId = null; }
+            }
+
             /**
-             * Restart the tick interval after a WPM change while playing,
-             * WITHOUT triggering pause()'s saveProgress POST (which would fire
-             * on every step of the WPM slider drag).
+             * WPM mudou durante a leitura: recalcula o ritmo SEM zerar o tempo da palavra
+             * atual (zerar travava as palavras enquanto o controle era arrastado) e sem o
+             * POST de salvar do pause().
              */
             _restartInterval() {
                 // Rolling mode reads this.wpm live every frame — nothing to restart.
                 if (this.readingMode === 'rolling') return;
-                if (this.intervalId) {
-                    clearInterval(this.intervalId);
-                    this.intervalId = null;
-                }
-                this._startInterval();
+                const elapsed = performance.now() - (this._lastTickAt || 0);
+                this._startInterval(Math.max(0, 60000 / this.wpm - elapsed));
             }
             
             pause() {
@@ -3106,10 +3196,7 @@
                 this.playPauseBtn.innerHTML = '▶ Ler';
                 // Unlock slider so user can seek while paused
                 this.progressSlider.classList.remove('locked');
-                if (this.intervalId) {
-                    clearInterval(this.intervalId);
-                    this.intervalId = null;
-                }
+                this._clearWordTimers();
                 this._stopRolling();
 
                 this.stopAutoSave();
@@ -3168,10 +3255,13 @@
                 if (this.words.length === 0) return;
                 
                 if (this.readingMode === 'rolling') {
-                    const inWindow = this.rollCenters && this.rollingRibbon.firstChild &&
-                        this.currentIndex >= this.rollingWindowStart &&
-                        this.currentIndex < this.rollingWindowStart + this.rollCenters.length;
-                    if (!inWindow) {
+                    const n = this.rollCenters ? this.rollCenters.length : 0;
+                    const local = this.currentIndex - this.rollingWindowStart;
+                    const MARGIN = 40;   // palavras visíveis de cada lado com folga
+                    const inWindow = n && this.rollingRibbon.firstChild && local >= 0 && local < n;
+                    const nearLeft = this.rollingWindowStart > 0 && local < MARGIN;
+                    const nearRight = this.rollingWindowStart + n < this.words.length && local > n - MARGIN;
+                    if (!inWindow || nearLeft || nearRight) {
                         this.renderRollingWindow();
                     } else {
                         this.rollX = this.rollCenters[this.currentIndex - this.rollingWindowStart];
@@ -3307,8 +3397,13 @@
             
             toggleTheme() {
                 this.theme = this.theme === 'night' ? 'day' : 'night';
+                // Troca o tema inteiro de uma vez: sem isso, botões e campos (que têm
+                // transição de cor) mudam 0,3 s depois do fundo e a tela "pisca" misturada.
+                document.body.classList.add('no-transition');
                 this.applyTheme();
                 this.saveTheme();
+                void document.body.offsetHeight;   // aplica o tema novo já sem transição
+                requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove('no-transition')));
             }
             
             applyTheme() {
@@ -3328,10 +3423,8 @@
             }
             
             loadTheme() {
-                const savedTheme = localStorage.getItem('speedReaderTheme');
-                if (savedTheme) {
-                    this.theme = savedTheme;
-                }
+                // Mesma regra do script do topo da página (só 'night' é noite), para não trocar ao carregar
+                this.theme = localStorage.getItem('speedReaderTheme') === 'night' ? 'night' : 'day';
                 this.applyTheme();
             }
             
@@ -3344,14 +3437,14 @@
                 // Chapter selector is now the LAST control group (after Controls,
                 // Reading Mode, and Reading Speed). We append to the .controls div.
                 const selectorHTML = `
-                    <div id="chapterSelector" class="control-group" style="animation: fadeIn 0.3s ease;">
+                    <div id="chapterSelector" class="control-group">
                         <label>Ir para o capítulo</label>
                         <select id="chapterSelect" style="width: 100%; padding: 0.75rem; background: var(--bg-dark); 
                                 color: var(--text-primary); border: 1px solid rgba(255,255,255,0.1); 
                                 border-radius: 0.5rem; font-family: 'Crimson Pro', serif; font-size: 1rem;
                                 cursor: pointer;">
                             ${this.chapters.map((ch, idx) => 
-                                `<option value="${idx}">${ch.title}</option>`
+                                `<option value="${idx}">${this.esc(ch.title)}</option>`
                             ).join('')}
                         </select>
                     </div>
@@ -3385,7 +3478,6 @@
                 this.updateProgress();
                 this.displayCurrent();
                 this.updateChapterSelection();
-                if (this.readingMode === 'rolling') this.renderRollingWindow();
                 // Persist the jump — chapter jumps are seeks, not reading.
                 if (this.auth.isAuthenticated()) this.saveProgress(false);
                 this.showStatus(`📑 ${this.chapters[chapterIndex].title}`, 'info');
@@ -3470,13 +3562,15 @@
             async onAuthReady() {
                 this.updateAuthUI();
                 if (this.auth.isAuthenticated()) {
+                    this.loadHome(true);           // em paralelo com a cota: não espera uma pela outra
                     await this.refreshQuota();
-                    this.updateAuthUI();   // agora sabe se é Pro
-                    this.loadHome(true);
+                    this.updateAuthUI();           // confirma o plano pela cota (normalmente nada muda)
                 } else {
                     this.quota = null;
                     this.dashboard = null;
                     this.homeData = null;
+                    this.homeCache = {};
+                    this._homeSig = null;
                     this.renderStats();
                     this.closeDrawer();
                     if (!this.readerView.hidden) this.showHome();
