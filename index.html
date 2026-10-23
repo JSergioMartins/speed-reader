@@ -30,6 +30,10 @@
             --text-primary: #e5e7eb;
             --text-secondary: #9ca3af;
             --highlight: #fbbf24;
+            --line: rgba(255, 255, 255, 0.10);
+            --gold: #e8b931;
+            --gold-soft: rgba(232, 185, 49, 0.28);
+            --sheet: #151b2e;
         }
         
         /* Day Theme - Kindle Style */
@@ -42,6 +46,10 @@
             --text-primary: #0f1111;
             --text-secondary: #565959;
             --highlight: #c45500;
+            --line: #ddd6c1;
+            --gold: #c99a1c;
+            --gold-soft: rgba(201, 154, 28, 0.25);
+            --sheet: #fbf9f3;
         }
         
         body.day-theme::before {
@@ -156,101 +164,100 @@
             padding: 2rem;
         }
         
+        /* ── App bar ─────────────────────────────────────────────────── */
         header {
-            text-align: center;
-            margin-bottom: 3rem;
-            animation: fadeInDown 0.8s ease;
-            position: relative;
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 48px 1fr 48px;
             align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            text-align: center;
         }
         
         .header-center {
-            flex: 1;
-            text-align: center;
             min-width: 0;
         }
         
-        .theme-toggle {
+        .icon-btn {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border-radius: 50%;
             background: var(--bg-medium);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 2rem;
-            padding: 0.5rem 1rem;
-            display: flex;
+            border: 1px solid var(--line);
+            color: var(--text-primary);
+            display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-            flex: 0 0 auto;
-            width: 110px;
+            justify-content: center;
+            text-transform: none;
+            letter-spacing: normal;
+            font-size: 1.1rem;
+            transition: border-color 0.2s ease;
         }
+        .icon-btn::before { content: none; }
+        .icon-btn:hover { border-color: var(--accent); }
         
-        .theme-toggle:hover {
-            border-color: var(--accent);
-            transform: translateY(-2px);
-        }
-        
-        .theme-icon {
-            font-size: 1.2rem;
-        }
+        .theme-toggle { justify-self: start; }
+        .theme-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
         
         .auth-section {
+            justify-self: end;
             display: flex;
             align-items: center;
-            justify-content: flex-end;
-            gap: 0.5rem;
-            flex: 0 0 auto;
-            width: 110px;
         }
         
-        .auth-btn, .logout-btn {
+        .auth-btn {
             background: var(--accent);
             color: var(--bg-dark);
             border: none;
             border-radius: 2rem;
-            padding: 0.5rem 1.5rem;
+            padding: 0.55rem 1.2rem;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .auth-btn:hover, .logout-btn:hover {
-            background: var(--highlight);
-            transform: translateY(-2px);
-        }
-        
-        .user-menu {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: var(--bg-medium);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 2rem;
-            padding: 0.4rem 0.75rem;
-            max-width: 100%;
-            overflow: hidden;
-        }
-        
-        .user-info {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            overflow: hidden;
-            text-overflow: ellipsis;
+            text-transform: none;
+            letter-spacing: 0;
             white-space: nowrap;
-            max-width: 120px;
         }
+        .auth-btn:hover { background: var(--highlight); }
         
-        .logout-btn {
-            padding: 0.3rem 0.75rem;
-            font-size: 0.7rem;
-            flex-shrink: 0;
+        /* Avatar: inicial do nome; selo PRO dourado preso embaixo */
+        .avatar-btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            background: var(--accent);
+            color: var(--bg-dark);
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            text-transform: none;
+            letter-spacing: 0;
+            overflow: visible;
+        }
+        .avatar-btn::before { content: none; }
+        .avatar-btn.is-pro { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); }
+        .avatar-badge {
+            position: absolute;
+            left: 50%;
+            bottom: -9px;
+            transform: translateX(-50%);
+            background: var(--gold);
+            color: #2b1d00;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            padding: 1px 5px;
+            border-radius: 6px;
+            line-height: 1.3;
+            pointer-events: none;
         }
         
         h1 {
@@ -285,7 +292,6 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             position: relative;
             overflow: hidden;
-            animation: fadeIn 1s ease 0.2s both;
         }
         
         .reader-container::before {
@@ -401,7 +407,6 @@
             padding: 2rem;
             margin-bottom: 2rem;
             border: 1px solid rgba(255, 255, 255, 0.05);
-            animation: fadeIn 1s ease 0.4s both;
         }
         
         .control-group {
@@ -558,7 +563,6 @@
             cursor: pointer;
             transition: all 0.3s ease;
             margin-bottom: 1.5rem;
-            animation: fadeIn 1s ease 0.6s both;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -891,56 +895,429 @@
             }
         }
         
-        /* ── Library (catálogo) ──────────────────────────────────────── */
-        .library {
-            background: var(--bg-light);
-            border-radius: 1.5rem;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            animation: fadeIn 1s ease 0.5s both;
-        }
-        body.day-theme .library { background: #ffffff; border: 1px solid #ddd6c1; }
-        .library-head {
-            display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;
-        }
-        .library-head label { margin: 0; flex: 0 0 auto; }
-        .library-search {
-            flex: 1 1 220px; background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 0.75rem; padding: 0.65rem 1rem; color: var(--text-primary);
-            font-family: 'Crimson Pro', serif; font-size: 1rem;
-        }
-        .library-search:focus { outline: none; border-color: var(--accent); }
-        .library-list {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.75rem;
-            max-height: 320px; overflow-y: auto; padding-right: 0.25rem;
-        }
-        .book-card {
-            display: flex; gap: 0.75rem; align-items: center; background: var(--bg-dark);
-            border: 1px solid rgba(255,255,255,0.06); border-radius: 0.75rem; padding: 0.6rem 0.75rem;
-            cursor: pointer; transition: border-color 0.2s ease, transform 0.2s ease;
-        }
-        .book-card:hover { border-color: var(--accent); transform: translateY(-1px); }
-        body.day-theme .book-card { background: #fbf9f3; border-color: #ddd6c1; }
-        .book-cover { width: 36px; height: 52px; object-fit: cover; border-radius: 4px; background: var(--bg-medium); flex-shrink: 0; }
-        .book-meta { min-width: 0; }
-        .book-title { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .book-author { font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .book-badge { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent); }
-        .library-empty { color: var(--text-secondary); font-size: 0.9rem; padding: 0.5rem; }
+        /* ── Views ───────────────────────────────────────────────────── */
+        [hidden] { display: none !important; }
         
-        /* ── Stats strip (quota + ranking) ──────────────────────────── */
-        .stats-strip {
-            display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap;
-            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-secondary);
-            margin: 0.25rem 0 1.25rem;
+        /* ── Home: busca + estantes ──────────────────────────────────── */
+        .home-bar {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
         }
-        .stats-strip b { color: var(--accent); font-weight: 600; }
-        .stats-strip .pro { color: var(--highlight); }
-        .upload-area .pro-tag {
-            font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--highlight);
-            border: 1px solid var(--highlight); border-radius: 1rem; padding: 0.1rem 0.5rem; margin-left: 0.5rem;
+        .search-wrap {
+            position: relative;
+            flex: 1 1 280px;
         }
+        .search-wrap svg {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+        .search-input {
+            width: 100%;
+            padding: 0.8rem 1rem 0.8rem 2.75rem;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: var(--bg-medium);
+            color: var(--text-primary);
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.1rem;
+        }
+        .search-input::placeholder { color: var(--text-secondary); opacity: 0.85; }
+        .search-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--gold-soft); }
+        
+        .upload-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.1rem;
+            border-radius: 999px;
+            border: 1px dashed var(--accent);
+            color: var(--accent);
+            background: transparent;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: none;
+            letter-spacing: 0;
+            white-space: nowrap;
+        }
+        .upload-chip::before { content: none; }
+        .upload-chip:hover, .upload-chip.drag-over { background: var(--bg-medium); }
+        .upload-chip .pro-tag {
+            background: var(--gold);
+            color: #2b1d00;
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border-radius: 5px;
+        }
+        
+        .shelf { position: relative; margin: 0 0 2.25rem; }
+        .shelf-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.8rem;
+        }
+        .shelf-title {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            line-height: 1.2;
+            color: var(--text-primary);
+        }
+        .shelf-count { font-size: 0.95rem; color: var(--text-secondary); white-space: nowrap; }
+        .shelf-track {
+            display: flex;
+            gap: 1.1rem;
+            overflow-x: auto;
+            scroll-snap-type: x proximity;
+            scroll-behavior: smooth;
+            overscroll-behavior-x: contain;
+            padding: 6px 2px 10px;
+            scrollbar-width: none;
+        }
+        .shelf-track::-webkit-scrollbar { display: none; }
+        .shelf-arrow {
+            position: absolute;
+            top: 50%;
+            width: 42px;
+            height: 42px;
+            padding: 0;
+            border-radius: 50%;
+            border: 1px solid var(--line);
+            background: var(--sheet);
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: 0;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            z-index: 2;
+            display: none;
+        }
+        .shelf-arrow::before { content: none; }
+        .shelf-arrow { top: calc(50% + 0.6rem); transform: translateY(-50%); }
+        .shelf-arrow.prev { left: -16px; }
+        .shelf-arrow.next { right: -16px; }
+        @media (hover: hover) and (pointer: fine) {
+            .shelf-arrow { display: block; }
+            .shelf:hover .shelf-arrow:not([disabled]) { opacity: 1; }
+        }
+        .shelf-arrow[disabled] { visibility: hidden; }
+        
+        /* Livro: capa gerada (cor de tecido + linhas de velocidade) */
+        .book {
+            flex: 0 0 auto;
+            width: 132px;
+            scroll-snap-align: start;
+            background: none;
+            border: none;
+            padding: 0;
+            margin: 0;
+            text-align: left;
+            color: inherit;
+            font: inherit;
+            text-transform: none;
+            letter-spacing: normal;
+            cursor: pointer;
+            overflow: visible;
+        }
+        .book::before { content: none; }
+        .book:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+        .cover {
+            position: relative;
+            aspect-ratio: 2 / 3;
+            border-radius: 3px 7px 7px 3px;
+            background-color: var(--cloth, #34495e);
+            background-image:
+                linear-gradient(90deg, rgba(0,0,0,0.30) 0, rgba(0,0,0,0.10) 5px, rgba(255,255,255,0.08) 7px, transparent 13px),
+                linear-gradient(170deg, rgba(255,255,255,0.08), rgba(0,0,0,0.20));
+            color: #f3ead6;
+            padding: 15px 12px 13px 19px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.18), 0 10px 22px -10px rgba(0,0,0,0.55);
+            transition: transform 0.18s ease;
+        }
+        .cover::after {
+            content: '';
+            position: absolute;
+            inset: 7px 7px 7px 12px;
+            border: 1px solid rgba(243, 234, 214, 0.30);
+            border-radius: 2px;
+            pointer-events: none;
+        }
+        .book:hover .cover, .book:focus-visible .cover { transform: translateY(-4px); }
+        .cover-speed { display: flex; flex-direction: column; gap: 3px; margin-bottom: 11px; }
+        .cover-speed i { display: block; height: 2px; border-radius: 2px; background: rgba(243, 234, 214, 0.6); }
+        .cover-speed i:nth-child(1) { width: 28px; }
+        .cover-speed i:nth-child(2) { width: 19px; }
+        .cover-speed i:nth-child(3) { width: 10px; }
+        .cover-title {
+            font-family: 'Crimson Pro', serif;
+            font-weight: 600;
+            font-size: 1.12rem;
+            line-height: 1.08;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .cover-title.t-m { font-size: 0.98rem; }
+        .cover-title.t-s { font-size: 0.86rem; }
+        .cover-author {
+            margin-top: auto;
+            font-family: 'Crimson Pro', serif;
+            font-style: italic;
+            font-size: 0.8rem;
+            line-height: 1.15;
+            opacity: 0.88;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .cover-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgba(0, 0, 0, 0.35); }
+        .cover-progress span { display: block; height: 100%; background: var(--gold); }
+        .book-meta { margin-top: 0.5rem; min-height: 1.2em; font-size: 0.88rem; line-height: 1.25; color: var(--text-secondary); }
+        
+        .cover.skeleton { background: var(--bg-medium); background-image: none; box-shadow: none; animation: skeletonPulse 1.4s ease-in-out infinite; }
+        .cover.skeleton::after { content: none; }
+        @keyframes skeletonPulse { 50% { opacity: 0.55; } }
+        
+        .results-head { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+        .results-note { color: var(--text-secondary); font-size: 1rem; }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+            gap: 1.4rem 1.1rem;
+        }
+        .results-grid .book { width: auto; }
+        .home-message {
+            max-width: 46ch;
+            margin: 1rem 0 2rem;
+            font-size: 1.15rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+        .home-message strong { color: var(--text-primary); }
+        .more-btn {
+            display: block;
+            margin: 1.75rem auto 0;
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            text-transform: none;
+            letter-spacing: 0;
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.05rem;
+            padding: 0.6rem 1.6rem;
+        }
+        .more-btn::before { content: none; }
+        
+        /* ── Hero (deslogado): demonstração ao vivo ──────────────────── */
+        .hero {
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            gap: 2.5rem;
+            align-items: center;
+            padding: 1rem 0 3rem;
+        }
+        .hero-copy h2 {
+            font-family: 'Crimson Pro', serif;
+            font-size: clamp(2rem, 4vw, 2.9rem);
+            font-weight: 600;
+            line-height: 1.08;
+            color: var(--text-primary);
+        }
+        .hero-copy p { font-size: 1.2rem; line-height: 1.5; color: var(--text-secondary); max-width: 36ch; margin: 0.9rem 0 1.5rem; }
+        .hero-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        .hero-demo {
+            background: var(--bg-medium);
+            border: 1px solid var(--line);
+            border-radius: 1.25rem;
+            min-height: 240px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+        .hero-word { font-family: 'Crimson Pro', serif; font-weight: 600; font-size: clamp(2.4rem, 6vw, 4rem); color: var(--text-primary); min-height: 1.25em; }
+        .hero-caption { margin-top: 1rem; color: var(--text-secondary); font-size: 1rem; }
+        .pill-btn {
+            border-radius: 999px;
+            padding: 0.85rem 1.6rem;
+            text-transform: none;
+            letter-spacing: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .pill-btn::before { content: none; }
+        .pill-primary { background: var(--accent); color: var(--bg-dark); border: 1px solid var(--accent); }
+        .pill-primary:hover { background: var(--highlight); border-color: var(--highlight); }
+        .pill-quiet { background: transparent; color: var(--text-primary); border: 1px solid var(--line); }
+        .pill-quiet:hover { border-color: var(--accent); }
+        
+        /* ── Ficha do livro ──────────────────────────────────────────── */
+        .book-sheet {
+            max-width: 640px;
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 1.6rem;
+            align-items: start;
+            position: relative;
+        }
+        .book-sheet .cover { width: 150px; cursor: default; }
+        .book-sheet .modal-close { position: absolute; top: 1rem; right: 1rem; }
+        .sheet-title { font-family: 'Crimson Pro', serif; font-size: 2rem; font-weight: 600; line-height: 1.08; padding-right: 2rem; color: var(--text-primary); }
+        .sheet-author { font-family: 'Crimson Pro', serif; font-style: italic; font-size: 1.2rem; color: var(--text-secondary); margin: 0.35rem 0 1.1rem; }
+        .sheet-facts { list-style: none; display: grid; gap: 0.4rem; font-size: 1.05rem; color: var(--text-secondary); margin-bottom: 1.4rem; }
+        .sheet-facts strong { color: var(--text-primary); font-weight: 600; }
+        .sheet-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+        .sheet-source { margin-top: 1.1rem; font-size: 0.92rem; color: var(--text-secondary); }
+        .sheet-source a { color: var(--accent); }
+        
+        /* ── Painel do perfil ────────────────────────────────────────── */
+        .drawer-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 17, 17, 0.45);
+            z-index: 1200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: min(410px, 100%);
+            background: var(--sheet);
+            border-left: 1px solid var(--line);
+            z-index: 1201;
+            transform: translateX(100%);
+            transition: transform 0.25s ease;
+            overflow-y: auto;
+            padding: 1.5rem 1.5rem 2.5rem;
+            box-shadow: -24px 0 48px rgba(0, 0, 0, 0.18);
+            visibility: hidden;
+        }
+        .drawer.open { transform: none; visibility: visible; }
+        .drawer-top { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.4rem; padding-right: 3rem; position: relative; }
+        .drawer-top .icon-btn { position: absolute; top: 0; right: -0.25rem; }
+        .drawer-avatar { width: 58px; height: 58px; font-size: 1.7rem; flex-shrink: 0; cursor: default; }
+        .drawer-name { font-family: 'Crimson Pro', serif; font-size: 1.45rem; font-weight: 600; line-height: 1.15; color: var(--text-primary); }
+        .drawer-email { font-size: 0.95rem; color: var(--text-secondary); overflow-wrap: anywhere; }
+        .plan-pill {
+            display: inline-block;
+            margin-top: 0.4rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: var(--gold);
+            color: #2b1d00;
+        }
+        .plan-pill.free { background: var(--bg-medium); color: var(--text-secondary); border: 1px solid var(--line); }
+        .d-section { padding: 1.25rem 0; border-top: 1px solid var(--line); }
+        .d-section h3 { font-family: 'Crimson Pro', serif; font-size: 1.2rem; font-weight: 600; margin-bottom: 0.7rem; color: var(--text-primary); }
+        .today-big { font-family: 'Crimson Pro', serif; font-size: 2.4rem; font-weight: 600; line-height: 1; color: var(--text-primary); }
+        .today-sub { color: var(--text-secondary); font-size: 1rem; margin-top: 0.3rem; }
+        .today-of { font-size: 1.1rem; font-weight: 400; color: var(--text-secondary); }
+        .drawer-heading { font-family: 'Crimson Pro', serif; font-size: 1.5rem; font-weight: 600; margin-bottom: 0.9rem; color: var(--text-primary); }
+        .today-sub .link-btn { margin-top: 0; }
+        .quota-bar { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; margin: 0.7rem 0 0.4rem; }
+        .quota-bar span { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+        .week-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; height: 70px; margin-top: 1.1rem; }
+        .week-bars .bar { background: var(--accent); opacity: 0.35; border-radius: 4px 4px 2px 2px; min-height: 3px; }
+        .week-bars .bar.today { opacity: 1; }
+        .week-labels { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+        .stat { background: var(--bg-medium); border: 1px solid var(--line); border-radius: 12px; padding: 0.85rem 0.95rem; }
+        .stat b { display: block; font-family: 'Crimson Pro', serif; font-size: 1.65rem; font-weight: 600; line-height: 1.1; color: var(--text-primary); }
+        .stat span { font-size: 0.9rem; color: var(--text-secondary); }
+        .rank-line { font-size: 1.08rem; line-height: 1.5; color: var(--text-secondary); }
+        .rank-line strong { color: var(--text-primary); }
+        .link-btn {
+            background: none;
+            border: none;
+            padding: 0;
+            margin-top: 0.6rem;
+            color: var(--accent);
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.05rem;
+            text-transform: none;
+            letter-spacing: 0;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            cursor: pointer;
+        }
+        .link-btn::before { content: none; }
+        .leader-tabs { margin-bottom: 0.9rem; }
+        .leader-list { list-style: none; }
+        .leader-list li {
+            display: grid;
+            grid-template-columns: 2.2rem 1.6rem 1fr auto;
+            gap: 0.5rem;
+            align-items: center;
+            padding: 0.6rem 0.4rem;
+            border-bottom: 1px solid var(--line);
+            font-size: 1.02rem;
+        }
+        .leader-list li.me { background: var(--bg-medium); border-radius: 8px; border-bottom-color: transparent; font-weight: 600; }
+        .leader-list .pos { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-secondary); }
+        .leader-list .words { font-size: 0.95rem; color: var(--text-secondary); }
+        .drawer-actions { display: grid; gap: 0.6rem; }
+        .drawer-actions .pill-btn { width: 100%; }
+        .admin-list { list-style: none; display: grid; gap: 0.35rem; font-size: 1rem; color: var(--text-secondary); margin-bottom: 0.9rem; }
+        .admin-list strong { color: var(--text-primary); }
+        .admin-note { font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.6rem; }
+        
+        /* ── Tela de leitura ─────────────────────────────────────────── */
+        .reader-bar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
+        .back-btn {
+            flex-shrink: 0;
+            background: var(--bg-medium);
+            border: 1px solid var(--line);
+            color: var(--text-primary);
+            border-radius: 999px;
+            padding: 0.55rem 1rem;
+            text-transform: none;
+            letter-spacing: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+        .back-btn::before { content: none; }
+        .back-btn:hover { border-color: var(--accent); }
+        .reader-book { min-width: 0; }
+        .reader-book-title { font-family: 'Crimson Pro', serif; font-size: 1.35rem; font-weight: 600; line-height: 1.15; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .reader-book-author { font-family: 'Crimson Pro', serif; font-style: italic; font-size: 1rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        /* Linha de cota (só plano grátis) */
+        .stats-strip { justify-content: center; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin: 0.35rem 0 1.25rem; font-size: 1rem; color: var(--text-secondary); }
+        .stats-strip strong { color: var(--text-primary); }
+        .stats-strip .link-btn { margin-top: 0; }
         
         /* ── Upgrade modal ───────────────────────────────────────────── */
         .plan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin: 1rem 0; }
@@ -955,26 +1332,37 @@
         .plan-list { list-style: none; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7; margin-bottom: 0.5rem; }
         .plan-list li::before { content: '✓ '; color: var(--accent); }
         
-        /* Status Messages */
+        /* Status: aviso flutuante (não empurra o conteúdo) */
+        #statusContainer {
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            transform: translateX(-50%);
+            width: min(560px, calc(100% - 32px));
+            z-index: 1300;
+            pointer-events: none;
+        }
         .status-message {
-            text-align: center;
-            padding: 1rem;
-            border-radius: 0.75rem;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-            animation: fadeIn 0.3s ease;
+            background: var(--sheet);
+            color: var(--text-primary);
+            border: 1px solid var(--line);
+            border-left: 4px solid var(--accent);
+            border-radius: 10px;
+            padding: 0.85rem 1.1rem;
+            font-size: 1.02rem;
+            box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+            animation: fadeIn 0.2s ease;
+        }
+        .status-error { border-left-color: #c0392b; }
+        
+        @media (max-width: 560px) {
+            .upload-chip { margin-left: auto; padding: 0.7rem 0.95rem; }
+            #uploadText { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
         }
         
-        .status-info {
-            background: rgba(0, 255, 157, 0.1);
-            color: var(--accent);
-            border: 1px solid rgba(0, 255, 157, 0.2);
-        }
-        
-        .status-error {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-            border: 1px solid rgba(239, 68, 68, 0.2);
+        @media (prefers-reduced-motion: reduce) {
+            .drawer, .drawer-backdrop, .cover, .shelf-track { transition: none; scroll-behavior: auto; }
+            .cover.skeleton { animation: none; }
         }
         
         /* Responsive */
@@ -983,23 +1371,16 @@
                 padding: 1rem;
             }
             
-            header {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .theme-toggle, .auth-section {
-                position: static;
-            }
-            
-            .user-info {
-                font-size: 0.75rem;
-                max-width: 150px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-            
+            header { gap: 0.5rem; margin-bottom: 1.25rem; }
+            h1 { font-size: clamp(1.45rem, 7vw, 2rem); margin-bottom: 0; }
+            .subtitle { display: none; }
+            .book { width: 112px; }
+            .cover { padding: 13px 10px 11px 16px; }
+            .shelf-title { font-size: 1.3rem; }
+            .hero { grid-template-columns: 1fr; gap: 1.5rem; }
+            .book-sheet { grid-template-columns: 1fr; }
+            .book-sheet .cover { width: 120px; }
+
             .modal-content {
                 padding: 2rem 1.5rem;
             }
@@ -1021,7 +1402,7 @@
                 flex-direction: column;
             }
             
-            button {
+            .button-group button {
                 width: 100%;
             }
         }
@@ -1030,9 +1411,9 @@
 <body>
     <div class="container">
         <header>
-            <button class="theme-toggle" id="themeToggle">
-                <span class="theme-icon" id="themeIcon">☀️</span>
-                <span id="themeText">Dia</span>
+            <button class="icon-btn theme-toggle" id="themeToggle" aria-label="Alternar tema claro/escuro">
+                <span class="theme-icon" id="themeIcon" aria-hidden="true">☀️</span>
+                <span class="theme-text" id="themeText">Dia</span>
             </button>
             <div class="header-center">
                 <h1>SPEED READER</h1>
@@ -1040,75 +1421,115 @@
             </div>
             <div class="auth-section">
                 <button class="auth-btn" id="authBtn">Entrar</button>
-                <div class="user-menu" id="userMenu" style="display: none;">
-                    <div class="user-info" id="userInfo"></div>
-                    <button class="logout-btn" id="logoutBtn">Sair</button>
-                </div>
+                <button class="avatar-btn" id="avatarBtn" style="display: none;" aria-label="Abrir perfil">
+                    <span id="avatarInitial" aria-hidden="true"></span>
+                    <span class="avatar-badge" id="avatarBadge" hidden>PRO</span>
+                </button>
             </div>
         </header>
         
-        <div class="library" id="library" style="display: none;">
-            <div class="library-head">
-                <label>Biblioteca gratuita</label>
-                <input type="search" class="library-search" id="libSearch" placeholder="Buscar título ou autor (Machado, Dickens…)">
-                <div class="mode-toggle" id="libLang">
-                    <button type="button" class="mode-btn active" data-lang="pt">Português</button>
-                    <button type="button" class="mode-btn" data-lang="en">English</button>
+        <!-- Tela inicial: biblioteca -->
+        <main class="view" id="homeView">
+            <section class="hero" id="hero" hidden>
+                <div class="hero-copy">
+                    <h2>Quão rápido você consegue ler?</h2>
+                    <p>Uma palavra por vez, no ritmo que você escolher. Comece pelos clássicos grátis: Machado, Alencar, Eça e muitos outros.</p>
+                    <div class="hero-actions">
+                        <button class="pill-btn pill-primary" id="heroSignup">Criar conta grátis</button>
+                        <button class="pill-btn pill-quiet" id="heroLogin">Já tenho conta</button>
+                    </div>
                 </div>
+                <div class="hero-demo" aria-hidden="true">
+                    <div class="hero-word" id="heroWord"></div>
+                    <div class="hero-caption" id="heroCaption"></div>
+                </div>
+            </section>
+            
+            <div id="library" hidden>
+                <div class="home-bar">
+                    <label class="search-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+                        <input type="search" class="search-input" id="libSearch" placeholder="Buscar título ou autor" autocomplete="off" aria-label="Buscar título ou autor">
+                    </label>
+                    <div class="mode-toggle" id="libLang" role="group" aria-label="Idioma dos livros">
+                        <button type="button" class="mode-btn active" data-lang="pt">Português</button>
+                        <button type="button" class="mode-btn" data-lang="en">English</button>
+                    </div>
+                    <button type="button" class="upload-chip" id="uploadArea">
+                        <span id="uploadIcon" aria-hidden="true">⬆</span>
+                        <span id="uploadText">Seu PDF ou EPUB</span>
+                        <span class="pro-tag" id="uploadHint">PRO</span>
+                    </button>
+                    <input type="file" id="fileInput" accept=".txt,.pdf,.epub,.mobi,.acsm" style="display: none;">
+                </div>
+                <div id="homeRows"></div>
+                <div id="searchResults" hidden></div>
             </div>
-            <div class="library-list" id="libList"><div class="library-empty">Carregando…</div></div>
-        </div>
+        </main>
         
-        <div class="upload-area" id="uploadArea">
-            <div class="upload-icon" id="uploadIcon">📖</div>
-            <div class="upload-content">
-                <div class="upload-text" id="uploadText">Entre para começar a ler</div>
-                <div class="upload-hint" id="uploadHint">Crie uma conta grátis e leia 1.000 palavras por dia da biblioteca</div>
-            </div>
-            <input type="file" id="fileInput" accept=".txt,.pdf,.epub,.mobi,.acsm" style="display: none;">
-        </div>
-        
-        <div id="statusContainer"></div>
-        
-        <div class="reader-container">
-            <div id="word-display">Pronto para ler</div>
-            <div id="rolling-display">
-                <div id="rolling-ribbon"></div>
-            </div>
-        </div>
-        
-        <div class="progress-container">
-            <input type="range" id="progressSlider" min="0" max="1000" value="0" class="progress-slider">
-        </div>
-        <div class="progress-info" id="progressInfo">0 / 0 palavras</div>
-        <div class="stats-strip" id="statsStrip" style="display: none;"></div>
-        
-        <div class="controls">
-            <div class="control-group">
-                <label>Controles</label>
-                <div class="button-group">
-                    <button class="btn-primary" id="playPauseBtn">▶ Ler</button>
-                    <button class="btn-secondary" id="rewindBtn">⏮ Reiniciar</button>
-                    <button class="btn-danger" id="clearBtn">✕ Fechar livro</button>
+        <!-- Tela de leitura -->
+        <section class="view" id="readerView" hidden>
+            <div class="reader-bar">
+                <button class="back-btn" id="backBtn">← Biblioteca</button>
+                <div class="reader-book">
+                    <div class="reader-book-title" id="readerTitle"></div>
+                    <div class="reader-book-author" id="readerAuthor"></div>
                 </div>
             </div>
             
-            <div class="control-group">
-                <label>Modo de leitura</label>
-                <div class="mode-toggle" id="modeToggle">
-                    <button type="button" class="mode-btn active" data-mode="word">Uma palavra</button>
-                    <button type="button" class="mode-btn" data-mode="rolling">Texto corrido</button>
+            <div class="reader-container">
+                <div id="word-display">Pronto para ler</div>
+                <div id="rolling-display">
+                    <div id="rolling-ribbon"></div>
                 </div>
             </div>
             
-            <div class="control-group">
-                <label>Velocidade</label>
-                <div class="slider-container">
-                    <input type="range" id="wpmSlider" min="10" max="1000" value="300" step="10">
-                    <span class="wpm-display" id="wpmDisplay">300 WPM</span>
+            <div class="progress-container">
+                <input type="range" id="progressSlider" min="0" max="1000" value="0" class="progress-slider" aria-label="Posição no livro">
+            </div>
+            <div class="progress-info" id="progressInfo">0 / 0 palavras</div>
+            <div class="stats-strip" id="statsStrip" style="display: none;"></div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>Controles</label>
+                    <div class="button-group">
+                        <button class="btn-primary" id="playPauseBtn">▶ Ler</button>
+                        <button class="btn-secondary" id="rewindBtn">⏮ Reiniciar</button>
+                        <button class="btn-danger" id="clearBtn">✕ Fechar livro</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Modo de leitura</label>
+                    <div class="mode-toggle" id="modeToggle">
+                        <button type="button" class="mode-btn active" data-mode="word">Uma palavra</button>
+                        <button type="button" class="mode-btn" data-mode="rolling">Texto corrido</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Velocidade</label>
+                    <div class="slider-container">
+                        <input type="range" id="wpmSlider" min="10" max="1000" value="300" step="10" aria-label="Velocidade em palavras por minuto">
+                        <span class="wpm-display" id="wpmDisplay">300 WPM</span>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
+    </div>
+    
+    <div id="statusContainer" aria-live="polite"></div>
+    
+    <!-- Painel do perfil -->
+    <div class="drawer-backdrop" id="drawerBackdrop"></div>
+    <aside class="drawer" id="profileDrawer" aria-label="Seu perfil" aria-hidden="true">
+        <div id="drawerBody"></div>
+    </aside>
+    
+    <!-- Ficha do livro -->
+    <div class="modal" id="bookModal">
+        <div class="modal-content book-sheet" id="bookSheet" role="dialog" aria-modal="true"></div>
     </div>
     
     <!-- Auth Modal -->
@@ -1426,6 +1847,22 @@
                 this.libLangCode = 'pt';
                 this._libTimer = null;
                 
+                // Biblioteca / perfil
+                this.homeData = null;          // última resposta de /catalog/home
+                this.homeLang = null;
+                this.searchQuery = '';
+                this.searchItems = [];
+                this.itemIndex = new Map();    // "fonte:id" → item do catálogo (para a ficha)
+                this.currentBook = null;       // item do catálogo aberto no leitor
+                this.dashboard = null;         // /user/dashboard
+                this.adminStatus = null;
+                this.drawerMode = 'profile';   // 'profile' | 'leaderboard'
+                this.leaderPeriod = 'week';
+                this.leaderData = null;
+                this._statusPoll = null;
+                this._adminPoll = null;
+                this._heroTimer = null;
+                
                 this.auth = new AuthManager(() => this.onAuthReady());
                 
                 this.initElements();
@@ -1433,6 +1870,15 @@
                 this.initAuthUI();
                 this.loadTheme();
                 this.applyReadingMode();  // set initial mode class
+                
+                // Recarregou a página no meio da leitura (#ler): volta limpo para a biblioteca
+                if (location.hash === '#ler') history.replaceState(null, '', location.pathname + location.search);
+                // Já logado: mostra o esqueleto da biblioteca enquanto /auth/me responde
+                if (this.auth.token) {
+                    this.library.hidden = false;
+                    this.homeRows.innerHTML = this.ghostShelves(3);
+                    this.authBtn.style.display = 'none';
+                }
             }
             
             initElements() {
@@ -1459,9 +1905,9 @@
                 
                 // Auth elements
                 this.authBtn = document.getElementById('authBtn');
-                this.userMenu = document.getElementById('userMenu');
-                this.userInfo = document.getElementById('userInfo');
-                this.logoutBtn = document.getElementById('logoutBtn');
+                this.avatarBtn = document.getElementById('avatarBtn');
+                this.avatarInitial = document.getElementById('avatarInitial');
+                this.avatarBadge = document.getElementById('avatarBadge');
                 this.authModal = document.getElementById('authModal');
                 this.modalClose = document.getElementById('modalClose');
                 this.loginForm = document.getElementById('loginForm');
@@ -1470,11 +1916,25 @@
                 this.showLogin = document.getElementById('showLogin');
                 this.authError = document.getElementById('authError');
                 
-                // Library / stats / upgrade
+                // Views, biblioteca, perfil
+                this.homeView = document.getElementById('homeView');
+                this.readerView = document.getElementById('readerView');
+                this.hero = document.getElementById('hero');
+                this.heroWord = document.getElementById('heroWord');
+                this.heroCaption = document.getElementById('heroCaption');
                 this.library = document.getElementById('library');
                 this.libSearch = document.getElementById('libSearch');
                 this.libLang = document.getElementById('libLang');
-                this.libList = document.getElementById('libList');
+                this.homeRows = document.getElementById('homeRows');
+                this.searchResults = document.getElementById('searchResults');
+                this.backBtn = document.getElementById('backBtn');
+                this.readerTitle = document.getElementById('readerTitle');
+                this.readerAuthor = document.getElementById('readerAuthor');
+                this.drawer = document.getElementById('profileDrawer');
+                this.drawerBackdrop = document.getElementById('drawerBackdrop');
+                this.drawerBody = document.getElementById('drawerBody');
+                this.bookModal = document.getElementById('bookModal');
+                this.bookSheet = document.getElementById('bookSheet');
                 this.statsStrip = document.getElementById('statsStrip');
                 this.upgradeModal = document.getElementById('upgradeModal');
                 this.upgradeClose = document.getElementById('upgradeClose');
@@ -1556,22 +2016,65 @@
                     this.fileInput.click();
                 });
                 
-                // Library
+                // Biblioteca: busca, idioma, livros, setas das estantes
                 this.libSearch.addEventListener('input', () => {
                     clearTimeout(this._libTimer);
-                    this._libTimer = setTimeout(() => this.loadLibrary(), 350);
+                    this._libTimer = setTimeout(() => this.onSearchInput(), 280);
                 });
                 this.libLang.addEventListener('click', (e) => {
                     const btn = e.target.closest('.mode-btn');
-                    if (!btn) return;
+                    if (!btn || btn.dataset.lang === this.libLangCode) return;
                     this.libLangCode = btn.dataset.lang;
                     this.libLang.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b === btn));
-                    this.loadLibrary();
+                    if (this.searchQuery) this.runSearch(1); else this.loadHome(true);
                 });
-                this.libList.addEventListener('click', (e) => {
-                    const card = e.target.closest('.book-card');
-                    if (!card) return;
-                    this.openCatalogBook(card.dataset.source, card.dataset.id, card.dataset.title);
+                const onLibraryClick = (e) => {
+                    const arrow = e.target.closest('.shelf-arrow');
+                    if (arrow) {
+                        const track = arrow.parentElement.querySelector('.shelf-track');
+                        track.scrollBy({ left: (arrow.classList.contains('next') ? 1 : -1) * track.clientWidth * 0.85 });
+                        return;
+                    }
+                    const more = e.target.closest('[data-action="more"]');
+                    if (more) { this.runSearch((this.searchPage || 1) + 1); return; }
+                    const book = e.target.closest('.book');
+                    if (book && this.itemIndex.has(book.dataset.key)) this.showBookDetail(this.itemIndex.get(book.dataset.key));
+                };
+                this.homeRows.addEventListener('click', onLibraryClick);
+                this.searchResults.addEventListener('click', onLibraryClick);
+                
+                // Leitor ↔ biblioteca (botão voltar do app e do navegador)
+                this.backBtn.addEventListener('click', () => this.showHome());
+                window.addEventListener('popstate', () => {
+                    if (!this.readerView.hidden) this.showHome(true);
+                });
+                
+                // Perfil
+                this.avatarBtn.addEventListener('click', () => this.openDrawer());
+                this.drawerBackdrop.addEventListener('click', () => this.closeDrawer());
+                this.drawerBody.addEventListener('click', (e) => this.onDrawerClick(e));
+                this.statsStrip.addEventListener('click', (e) => {
+                    if (e.target.closest('[data-action="upgrade"]')) this.showUpgradeModal('');
+                });
+                
+                // Ficha do livro
+                this.bookModal.addEventListener('click', (e) => {
+                    if (e.target === this.bookModal || e.target.closest('[data-action="close-book"]')) this.closeBookModal();
+                    const read = e.target.closest('[data-action="read"]');
+                    if (read) this.openBook(this.sheetItem, read);
+                });
+                
+                // Hero (deslogado)
+                document.getElementById('heroSignup').addEventListener('click', () => { this.showAuthModal(); this.switchToRegister(); });
+                document.getElementById('heroLogin').addEventListener('click', () => this.showAuthModal());
+                
+                // Esc fecha o que estiver aberto por cima
+                document.addEventListener('keydown', (e) => {
+                    if (e.key !== 'Escape') return;
+                    if (this.bookModal.classList.contains('active')) this.closeBookModal();
+                    else if (this.drawer.classList.contains('open')) this.closeDrawer();
+                    else if (this.upgradeModal.classList.contains('active')) this.upgradeModal.classList.remove('active');
+                    else if (this.authModal.classList.contains('active')) this.hideAuthModal();
                 });
                 
                 // Upgrade modal
@@ -1618,6 +2121,8 @@
                     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
                     if (this.authModal.classList.contains('active')) return;
                     if (this.upgradeModal.classList.contains('active')) return;
+                    if (this.bookModal.classList.contains('active') || this.drawer.classList.contains('open')) return;
+                    if (this.readerView.hidden) return;   // atalhos só na tela de leitura
                     
                     if (e.code === 'Space') {
                         e.preventDefault();
@@ -1693,34 +2198,47 @@
                     }
                     
                     const data = await response.json();
-                    await this.loadBook(data, file.name.replace(/\.[^/.]+$/, ''), this.generateBookHash(file.name, data.totalWords));
+                    this.currentBook = null;
+                    this.showReader();
+                    await this.loadBook(data, file.name.replace(/\.[^/.]+$/, ''), this.generateBookHash(file.name, data.totalWords), 'Seu arquivo');
                 } catch (error) {
                     console.error('Parse error:', error);
                     this.showStatus(`❌ ${error.message}`, 'error');
                 }
             }
             
-            /** Open a public-domain book from the catalog (free and Pro). */
-            async openCatalogBook(source, id, title) {
+            /** Abre um livro do catálogo (grátis e Pro). `btn` = botão da ficha, para mostrar "Abrindo…". */
+            async openBook(item, btn = null) {
+                if (!item) return;
                 if (!this.auth.isAuthenticated()) { this.showAuthModal(); return; }
                 if (this.quota && this.quota.remaining_today === 0) {
-                    this.showUpgradeModal('Você já leu suas 1.000 palavras grátis de hoje. Volte amanhã ou assine o Pro.');
+                    this.closeBookModal();
+                    this.showUpgradeModal('Você já leu suas 1.000 palavras grátis de hoje. Volte amanhã ou assine o Pro para ler sem limite.');
                     return;
                 }
-                this.showStatus(`⏳ Abrindo ${title}...`, 'info');
+                const label = btn ? btn.textContent : '';
+                if (btn) { btn.disabled = true; btn.textContent = item.cached ? 'Abrindo…' : 'Preparando o texto…'; }
                 this.pause();
                 try {
-                    const data = await this.auth.post(`/catalog/open/${source}/${id}`);
-                    await this.loadBook(data, title, `${source}:${id}`);
+                    const data = await this.auth.post(`/catalog/open/${encodeURIComponent(item.source)}/${encodeURIComponent(item.source_id)}`);
+                    this.closeBookModal();
+                    this.currentBook = item;
+                    this.showReader();
+                    await this.loadBook(data, item.title, `${item.source}:${item.source_id}`, item.author);
                 } catch (error) {
                     console.error('Catalog open error:', error);
-                    this.showStatus(`❌ ${error.message}`, 'error');
+                    this.showStatus(`Não deu para abrir "${item.title}": ${error.message}`, 'error');
+                } finally {
+                    if (btn) { btn.disabled = false; btn.textContent = label; }
                 }
             }
             
             /** Common path for upload + catalog: set words, restore progress, UI. */
-            async loadBook(data, title, hash) {
+            async loadBook(data, title, hash, author = '') {
                 try {
+                    this.readerTitle.textContent = title;
+                    this.readerAuthor.textContent = this.firstAuthor(author);
+                    document.title = `${title} — Speed Reader`;
                     this.words = data.words;
                     this.chapters = data.chapters || [];
                     this.currentIndex = 0;
@@ -1766,24 +2284,18 @@
                         this.hideChapterSelector();
                     }
                     
-                    // ── Build status message ────────────────────────────────
-                    let status = `✅ ${title}`;
-                    if (data.totalChapters > 0) status += ` — ${data.totalChapters} capítulos,`;
-                    status += ` ${data.totalWords.toLocaleString('pt-BR')} palavras`;
+                    // ── Aviso curto ─────────────────────────────────────────
+                    let status = `${title}: ${this.fmt(data.totalWords)} palavras`;
+                    if (data.totalChapters > 0) status += `, ${data.totalChapters} capítulos`;
+                    status += '.';
                     if (restored) {
                         const pct = Math.round((this.currentIndex / this.words.length) * 100);
-                        status += ` | 📖 Retomado em ${pct}%`;
+                        status += ` Retomado em ${pct}%.`;
                     }
                     this.showStatus(status, 'info');
-                    
-                    // Update upload bar to show current book
-                    this.uploadIcon.textContent = '📗';
-                    this.uploadText.textContent = this.currentBookTitle;
-                    this.uploadHint.textContent = this.isPro() ? 'Toque para subir outro livro' : 'Escolha outro título na biblioteca';
-                    window.scrollTo({ top: this.wordDisplay.getBoundingClientRect().top + window.scrollY - 120, behavior: 'smooth' });
                 } catch (error) {
                     console.error('Load error:', error);
-                    this.showStatus(`❌ ${error.message}`, 'error');
+                    this.showStatus(`Não deu para carregar o livro: ${error.message}`, 'error');
                 }
             }
             
@@ -1824,27 +2336,21 @@
                 this.renderStats();
             }
             
+            /** Linha sob a barra de progresso: cota do plano grátis. Pro não vê nada aqui. */
             renderStats() {
-                if (!this.auth.isAuthenticated() || !this.quota) { this.statsStrip.style.display = 'none'; return; }
-                const parts = [];
-                if (this.quota.plan === 'pro') {
-                    parts.push(`<span class="pro">★ PRO</span>`);
-                } else {
-                    const used = Math.min(this.quota.daily_limit, this.quota.words_today + this.wordsSinceQuota);
-                    parts.push(`hoje <b>${used.toLocaleString('pt-BR')}</b> / ${this.quota.daily_limit.toLocaleString('pt-BR')} palavras`);
+                if (!this.auth.isAuthenticated() || !this.quota || this.quota.plan === 'pro') {
+                    this.statsStrip.style.display = 'none';
+                    return;
                 }
-                if (this.rank) {
-                    if (this.rank.week.words > 0 && this.rank.week.total_users > 1) {
-                        parts.push(`semana: <b>#${this.rank.week.rank}</b> de ${this.rank.week.total_users} · top ${Math.max(1, Math.round(100 - this.rank.week.percentile))}%`);
-                    }
-                    if (this.rank.wpm) parts.push(`<b>${this.rank.wpm}</b> WPM`);
-                }
-                this.statsStrip.innerHTML = parts.join('<span>·</span>');
+                const used = Math.min(this.quota.daily_limit, this.quota.words_today + this.wordsSinceQuota);
+                this.statsStrip.innerHTML = `<span>Hoje: <strong>${this.fmt(used)}</strong> de ${this.fmt(this.quota.daily_limit)} palavras grátis</span>
+                    <button type="button" class="link-btn" data-action="upgrade">Ler sem limite</button>`;
                 this.statsStrip.style.display = 'flex';
             }
             
             showUpgradeModal(reason) {
                 this.upgradeReason.textContent = reason || '';
+                this.upgradeReason.hidden = !reason;
                 this.upgradeError.style.display = 'none';
                 this.upgradeModal.classList.add('active');
             }
@@ -1860,39 +2366,570 @@
                 }
             }
             
-            // ── Library (catálogo) ────────────────────────────────────────────
-            async loadLibrary() {
-                if (!this.auth.isAuthenticated()) return;
-                const q = this.libSearch.value.trim();
-                this.libList.innerHTML = '<div class="library-empty">Buscando…</div>';
+            // ── Utilidades ────────────────────────────────────────────────────
+            fmt(n) { return Number(n || 0).toLocaleString('pt-BR'); }
+            esc(t) {
+                return String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+            displayName(u) {
+                if (!u) return '';
+                const n = (u.full_name || '').trim();
+                return n || (u.email || '').split('@')[0];
+            }
+            firstAuthor(a) { return String(a || '').split(';')[0].trim(); }
+            shortTitle(t) {
+                const main = String(t || '').split(/\s*[;:]\s*|\s+[—–-]\s+/)[0].trim();
+                return main || String(t || '');
+            }
+            formatDuration(min) {
+                if (!isFinite(min) || min <= 0) return '';
+                if (min < 1) return 'menos de 1 min';
+                if (min < 60) return `${Math.round(min)} min`;
+                const h = Math.floor(min / 60), m = Math.round(min % 60);
+                return m ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`;
+            }
+            formatDate(iso) {
+                if (!iso) return '';
+                const d = new Date(String(iso).slice(0, 19) + 'Z');
+                return isNaN(d) ? '' : d.toLocaleDateString('pt-BR');
+            }
+            /** Cor de "tecido" da capa: sempre a mesma para o mesmo livro. */
+            clothFor(item) {
+                const C = ['#6b2230', '#1f4a3a', '#20385e', '#8a6420', '#3c5a74', '#5a3a5e',
+                           '#14545a', '#3a3632', '#87402c', '#4d5a2c', '#2f4858', '#7a3b52'];
+                const s = `${item.title}|${item.author || ''}`;
+                let h = 0;
+                for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+                return C[h % C.length];
+            }
+            sourceName(src) {
+                return { wikisource: 'Wikisource', dominiopublico: 'Domínio Público (MEC)',
+                         gutenberg: 'Project Gutenberg' }[src] || src || '';
+            }
+            flag(cc) {
+                if (!cc || cc.length !== 2) return '';
+                return String.fromCodePoint(...[...cc.toUpperCase()].map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
+            }
+
+            // ── Telas: biblioteca ↔ leitura ───────────────────────────────────
+            showReader() {
+                this.closeDrawer();
+                this.homeView.hidden = true;
+                this.readerView.hidden = false;
+                if (!history.state || history.state.view !== 'reader') {
+                    history.pushState({ view: 'reader' }, '', '#ler');
+                }
+                window.scrollTo(0, 0);
+                if (this.readingMode === 'rolling' && this.words.length) this.renderRollingWindow();
+            }
+
+            showHome(fromPopState = false) {
+                const wasReader = !this.readerView.hidden;
+                if (this.isPlaying) this.pause();
+                this.readerView.hidden = true;
+                this.homeView.hidden = false;
+                document.title = 'Speed Reader';
+                if (wasReader && !fromPopState && history.state && history.state.view === 'reader') history.back();
+                window.scrollTo(0, 0);
+                // espera o último salvamento para a fileira "Continuar lendo" vir atualizada
+                Promise.resolve(this._lastSave).finally(() => {
+                    if (this.auth.isAuthenticated() && !this.searchQuery) this.loadHome(true);
+                });
+            }
+
+            // ── Biblioteca: capas, estantes, busca ────────────────────────────
+            coverHtml(item) {
+                const title = this.shortTitle(item.title);
+                const size = title.length > 34 ? 't-s' : title.length > 16 ? 't-m' : '';
+                const prog = item.progress != null
+                    ? `<div class="cover-progress"><span style="width:${Math.max(4, Math.round(item.progress * 100))}%"></span></div>`
+                    : '';
+                return `<div class="cover" style="--cloth:${this.clothFor(item)}">
+                        <div class="cover-speed" aria-hidden="true"><i></i><i></i><i></i></div>
+                        <div class="cover-title ${size}">${this.esc(title)}</div>
+                        <div class="cover-author">${this.esc(this.firstAuthor(item.author))}</div>${prog}
+                    </div>`;
+            }
+
+            bookCard(item) {
+                const key = `${item.source}:${item.source_id}`;
+                const known = this.itemIndex.get(key);
+                if (!(known && known.progress != null && item.progress == null)) this.itemIndex.set(key, item);
+                const author = this.firstAuthor(item.author);
+                let meta = '';
+                if (item.progress != null) meta = `${Math.round(item.progress * 100)}% lido`;
+                else if (item.total_words) meta = `${this.formatDuration(item.total_words / this.wpm)} no seu ritmo`;
+                return `<button type="button" class="book" data-key="${this.esc(key)}"
+                        aria-label="${this.esc(item.title + (author ? ', de ' + author : ''))}">
+                        ${this.coverHtml(item)}
+                        <div class="book-meta">${this.esc(meta)}</div>
+                    </button>`;
+            }
+
+            shelfHtml(row) {
+                return `<section class="shelf" aria-label="${this.esc(row.title)}">
+                        <div class="shelf-head"><h2 class="shelf-title">${this.esc(row.title)}</h2></div>
+                        <button type="button" class="shelf-arrow prev" aria-label="Voltar" disabled>‹</button>
+                        <div class="shelf-track">${row.items.map(i => this.bookCard(i)).join('')}</div>
+                        <button type="button" class="shelf-arrow next" aria-label="Avançar">›</button>
+                    </section>`;
+            }
+
+            ghostShelves(n = 2) {
+                const ghost = Array.from({ length: 9 }, () =>
+                    '<div class="book" aria-hidden="true"><div class="cover skeleton"></div><div class="book-meta"></div></div>').join('');
+                return Array.from({ length: n }, () =>
+                    `<section class="shelf" aria-hidden="true"><div class="shelf-head"><h2 class="shelf-title">&nbsp;</h2></div><div class="shelf-track">${ghost}</div></section>`).join('');
+            }
+
+            wireShelves(container) {
+                container.querySelectorAll('.shelf-track').forEach(track => {
+                    const shelf = track.parentElement;
+                    const prev = shelf.querySelector('.shelf-arrow.prev');
+                    const next = shelf.querySelector('.shelf-arrow.next');
+                    if (!prev || !next) return;
+                    const update = () => {
+                        prev.disabled = track.scrollLeft <= 2;
+                        next.disabled = track.scrollLeft >= track.scrollWidth - track.clientWidth - 2;
+                    };
+                    track.addEventListener('scroll', update, { passive: true });
+                    update();
+                });
+            }
+
+            async loadHome(force = false) {
+                if (!this.auth.isAuthenticated() || this.searchQuery) return;
+                const lang = this.libLangCode;
+                const haveCache = this.homeData && this.homeLang === lang;
+                if (haveCache) this.renderHome(this.homeData);
+                else this.homeRows.innerHTML = this.ghostShelves(3);
+                if (haveCache && !force) return;
                 try {
-                    const path = q
-                        ? `/catalog/search?q=${encodeURIComponent(q)}&lang=${this.libLangCode}`
-                        : `/catalog/popular?lang=${this.libLangCode}`;
-                    const res = await this.auth.get(path);
-                    this.renderLibrary(res.items);
+                    const d = await this.auth.get(`/catalog/home?lang=${lang}`);
+                    if (lang !== this.libLangCode || this.searchQuery) return;   // trocou de aba ou começou a buscar
+                    this.homeData = d;
+                    this.homeLang = lang;
+                    this.renderHome(d);
+                    if (d.importing) this.pollCatalogStatus();
                 } catch (e) {
-                    this.libList.innerHTML = `<div class="library-empty">❌ ${e.message}</div>`;
+                    if (!haveCache) {
+                        this.homeRows.innerHTML = `<p class="home-message">Não consegui carregar a biblioteca: ${this.esc(e.message)}. Recarregue a página para tentar de novo.</p>`;
+                    }
                 }
             }
-            
-            renderLibrary(items) {
-                if (!items || items.length === 0) {
-                    this.libList.innerHTML = '<div class="library-empty">Nada encontrado. Tente outro nome.</div>';
+
+            renderHome(d) {
+                this.itemIndex.clear();
+                const rows = d.rows || [];
+                const hasCatalog = rows.some(r => r.key !== 'continue');
+                let html = '';
+                if (!hasCatalog) {
+                    if (d.importing) {
+                        html += '<p class="home-message"><strong>Estamos montando a biblioteca agora.</strong> Leva alguns minutos e esta página se atualiza sozinha.</p>';
+                    } else if (!d.total) {
+                        html += '<p class="home-message"><strong>A biblioteca ainda está vazia.</strong> Os livros aparecem aqui assim que o servidor terminar de importar o catálogo.</p>';
+                    } else {
+                        html += `<p class="home-message">Ainda não há livros em ${this.libLangCode === 'pt' ? 'português' : 'inglês'} aqui. Troque o idioma ou use a busca.</p>`;
+                    }
+                }
+                html += rows.map(r => this.shelfHtml(r)).join('');
+                if (!hasCatalog && d.importing) html += this.ghostShelves(2);
+                this.homeRows.innerHTML = html;
+                this.wireShelves(this.homeRows);
+            }
+
+            pollCatalogStatus() {
+                if (this._statusPoll) return;
+                this._statusPoll = setInterval(async () => {
+                    const stop = () => { clearInterval(this._statusPoll); this._statusPoll = null; };
+                    if (!this.auth.isAuthenticated()) return stop();
+                    try {
+                        const st = await this.auth.get('/catalog/status');
+                        if (!st.running) { stop(); this.homeData = null; this.loadHome(true); }
+                    } catch (e) { /* tenta no próximo ciclo */ }
+                }, 8000);
+            }
+
+            onSearchInput() {
+                const q = this.libSearch.value.trim();
+                if (q === this.searchQuery) return;
+                this.searchQuery = q;
+                if (!q) {
+                    this.searchResults.hidden = true;
+                    this.homeRows.hidden = false;
+                    this.loadHome(false);
                     return;
                 }
-                const esc = (t) => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-                this.libList.innerHTML = items.map(b => `
-                    <div class="book-card" data-source="${esc(b.source)}" data-id="${esc(b.source_id)}" data-title="${esc(b.title)}">
-                        ${b.cover_url ? `<img class="book-cover" src="${esc(b.cover_url)}" alt="" loading="lazy">` : '<div class="book-cover"></div>'}
-                        <div class="book-meta">
-                            <div class="book-title">${esc(b.title)}</div>
-                            <div class="book-author">${esc(b.author || 'Autor desconhecido')}</div>
-                            ${b.cached ? '<div class="book-badge">⚡ abre na hora</div>' : ''}
-                        </div>
-                    </div>`).join('');
+                this.homeRows.hidden = true;
+                this.searchResults.hidden = false;
+                this.runSearch(1);
             }
-            
+
+            async runSearch(page = 1) {
+                const q = this.searchQuery, lang = this.libLangCode;
+                if (!q) return;
+                if (page === 1) {
+                    const ghost = Array.from({ length: 12 }, () =>
+                        '<div class="book" aria-hidden="true"><div class="cover skeleton"></div><div class="book-meta"></div></div>').join('');
+                    this.searchResults.innerHTML = `<div class="results-grid">${ghost}</div>`;
+                }
+                try {
+                    const d = await this.auth.get(`/catalog/search?q=${encodeURIComponent(q)}&lang=${lang}&page=${page}`);
+                    if (q !== this.searchQuery || lang !== this.libLangCode) return;   // resposta velha
+                    this.searchPage = page;
+                    this.searchItems = page === 1 ? d.items : this.searchItems.concat(d.items);
+                    if (!this.searchItems.length) {
+                        this.searchResults.innerHTML = `<p class="home-message">Nada encontrado para “${this.esc(q)}”. Confira a grafia ou busque só pelo sobrenome do autor.</p>`;
+                        return;
+                    }
+                    this.itemIndex.clear();
+                    const note = d.note ? `<p class="results-note">${this.esc(d.note)}</p>` : '';
+                    this.searchResults.innerHTML = `
+                        <div class="results-head"><h2 class="shelf-title">Resultados para “${this.esc(q)}”</h2>${note}</div>
+                        <div class="results-grid">${this.searchItems.map(i => this.bookCard(i)).join('')}</div>
+                        ${d.has_next ? '<button type="button" class="more-btn" data-action="more">Mostrar mais</button>' : ''}`;
+                } catch (e) {
+                    this.searchResults.innerHTML = `<p class="home-message">A busca falhou: ${this.esc(e.message)}. Tente de novo.</p>`;
+                }
+            }
+
+            // ── Ficha do livro ────────────────────────────────────────────────
+            showBookDetail(item) {
+                this.sheetItem = item;
+                const key = `${item.source}:${item.source_id}`;
+                const author = this.firstAuthor(item.author);
+                const facts = [];
+                if (item.total_words) {
+                    const min = item.total_words / this.wpm;
+                    facts.push(`<li><strong>${this.fmt(item.total_words)}</strong> palavras</li>`);
+                    facts.push(`<li>No seu ritmo (${this.wpm} WPM): <strong>${this.formatDuration(min)}</strong></li>`);
+                    facts.push(`<li>No dobro da velocidade: <strong>${this.formatDuration(min / 2)}</strong></li>`);
+                } else {
+                    facts.push('<li>Na primeira abertura o texto é preparado; leva alguns segundos.</li>');
+                }
+                if (item.progress != null) facts.push(`<li>Você parou em <strong>${Math.round(item.progress * 100)}%</strong></li>`);
+                const action = item.progress != null ? 'Continuar leitura' : 'Ler agora';
+                this.bookSheet.innerHTML = `
+                    <button type="button" class="modal-close" data-action="close-book" aria-label="Fechar">×</button>
+                    ${this.coverHtml(item)}
+                    <div>
+                        <h2 class="sheet-title" id="sheetTitle">${this.esc(item.title)}</h2>
+                        <p class="sheet-author">${this.esc(author || 'Autor desconhecido')}</p>
+                        <ul class="sheet-facts">${facts.join('')}</ul>
+                        <div class="sheet-actions">
+                            <button type="button" class="pill-btn pill-primary" data-action="read" data-key="${this.esc(key)}">${action}</button>
+                        </div>
+                        ${item.source_url ? `<p class="sheet-source">Texto: <a href="${this.esc(item.source_url)}" target="_blank" rel="noopener">${this.esc(this.sourceName(item.source))}</a></p>` : ''}
+                    </div>`;
+                this.bookSheet.setAttribute('aria-labelledby', 'sheetTitle');
+                this.bookModal.classList.add('active');
+                this.bookSheet.querySelector('[data-action="read"]').focus();
+            }
+
+            closeBookModal() {
+                this.bookModal.classList.remove('active');
+            }
+
+            // ── Painel do perfil ──────────────────────────────────────────────
+            async openDrawer() {
+                if (!this.auth.isAuthenticated()) { this.showAuthModal(); return; }
+                this.drawerMode = 'profile';
+                this.drawer.classList.add('open');
+                this.drawerBackdrop.classList.add('open');
+                this.drawer.setAttribute('aria-hidden', 'false');
+                this.renderDrawer();
+                const close = this.drawer.querySelector('[data-action="close"]');
+                if (close) close.focus();
+                await this.loadDashboard();
+            }
+
+            closeDrawer() {
+                if (!this.drawer.classList.contains('open')) return;
+                this.drawer.classList.remove('open');
+                this.drawerBackdrop.classList.remove('open');
+                this.drawer.setAttribute('aria-hidden', 'true');
+                clearInterval(this._adminPoll);
+                this._adminPoll = null;
+                if (this.avatarBtn.style.display !== 'none') this.avatarBtn.focus();
+            }
+
+            async loadDashboard() {
+                try {
+                    this.dashboard = await this.auth.get('/user/dashboard');
+                    this.quota = this.dashboard.quota;
+                    this.wordsSinceQuota = 0;
+                    this.updateAuthUI();
+                    this.renderStats();
+                    if (this.dashboard.is_admin && this.drawer.classList.contains('open')) this.loadAdminStatus();
+                } catch (e) {
+                    console.error('dashboard', e);
+                }
+                this.renderDrawer();
+            }
+
+            renderDrawer() {
+                if (!this.drawer.classList.contains('open')) return;
+                this.drawerBody.innerHTML = this.drawerMode === 'leaderboard' ? this.leaderboardHtml() : this.profileHtml();
+            }
+
+            profileHtml() {
+                const d = this.dashboard;
+                const u = (d && d.user) || this.auth.user || {};
+                const name = this.displayName(u);
+                const pro = this.isPro();
+                const top = `
+                    <div class="drawer-top">
+                        <span class="avatar-btn drawer-avatar ${pro ? 'is-pro' : ''}" aria-hidden="true">${this.esc(name.charAt(0).toUpperCase())}</span>
+                        <div>
+                            <div class="drawer-name">${this.esc(name)}</div>
+                            <div class="drawer-email">${this.esc(u.email || '')}</div>
+                            <span class="plan-pill ${pro ? '' : 'free'}">${pro ? 'PRO' : 'Plano grátis'}</span>
+                        </div>
+                        <button type="button" class="icon-btn" data-action="close" aria-label="Fechar perfil">×</button>
+                    </div>`;
+                if (!d) return top + '<p class="today-sub">Carregando seus números…</p>';
+                const st = d.stats, q = d.quota, r = d.rank;
+
+                // Hoje + últimos 7 dias
+                let today;
+                if (q.plan === 'pro') {
+                    today = `<div class="today-big">${this.fmt(st.words_today)}</div>
+                             <div class="today-sub">palavras lidas hoje</div>`;
+                } else {
+                    const used = Math.min(q.daily_limit, st.words_today);
+                    const pct = Math.round(100 * used / q.daily_limit);
+                    today = `<div class="today-big">${this.fmt(used)} <span class="today-of">de ${this.fmt(q.daily_limit)}</span></div>
+                             <div class="quota-bar" role="progressbar" aria-label="Cota grátis de hoje" aria-valuemin="0" aria-valuemax="${q.daily_limit}" aria-valuenow="${used}"><span style="width:${pct}%"></span></div>
+                             <div class="today-sub">palavras grátis hoje. <button type="button" class="link-btn" data-action="upgrade">Ler sem limite</button></div>`;
+                }
+                const days = st.last_7_days || [];
+                const max = Math.max(1, ...days.map(x => x.words));
+                const initials = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+                const bars = days.map((x, i) =>
+                    `<div class="bar ${i === days.length - 1 ? 'today' : ''}" style="height:${Math.max(4, Math.round(100 * x.words / max))}%" title="${this.fmt(x.words)} palavras"></div>`).join('');
+                const labels = days.map(x => `<span>${initials[new Date(x.date + 'T12:00:00').getDay()]}</span>`).join('');
+
+                // Progresso
+                const tile = (big, label) => `<div class="stat"><b>${big}</b><span>${label}</span></div>`;
+                const tiles = [
+                    tile(st.current_streak, st.current_streak === 1 ? 'dia seguido' : 'dias seguidos'),
+                    tile(this.fmt(st.words_week), 'palavras na semana'),
+                    tile(this.formatDuration(st.reading_minutes) || '0 min', 'lendo no total'),
+                    tile(st.books_completed, st.books_completed === 1 ? 'livro concluído' : 'livros concluídos'),
+                ].join('');
+
+                // Ranking
+                let rank;
+                if (r.week.words > 0) {
+                    const n = r.week.total_users;
+                    rank = `Você está em <strong>${r.week.rank}º lugar</strong> entre ${n} ${n === 1 ? 'leitor' : 'leitores'} nesta semana`;
+                    rank += n > 1 ? `, à frente de ${Math.round(r.week.percentile)}% deles.` : '.';
+                } else {
+                    rank = 'Leia hoje para entrar no ranking da semana.';
+                }
+                if (r.wpm) {
+                    rank += `<br>Seu ritmo: <strong>${r.wpm} WPM</strong>`;
+                    rank += r.wpm_percentile >= 5 ? `, mais rápido que ${Math.round(r.wpm_percentile)}% dos leitores.` : '.';
+                }
+
+                // Assinatura
+                let plan;
+                const exp = this.formatDate(u.plan_expires_at);
+                if (q.plan === 'pro') {
+                    if (u.plan_status === 'active') {
+                        plan = `<p class="rank-line">Pro ativo. Renova em <strong>${exp}</strong>.</p>
+                                <div class="drawer-actions" style="margin-top:0.8rem"><button type="button" class="pill-btn pill-quiet" data-action="cancel">Cancelar renovação</button></div>`;
+                    } else if (u.plan_status === 'cancelled') {
+                        plan = `<p class="rank-line">Renovação cancelada. Você continua Pro até <strong>${exp}</strong>.</p>`;
+                    } else {
+                        plan = `<p class="rank-line">Pro ${exp ? `até <strong>${exp}</strong>` : 'sem data de expiração'}.</p>`;
+                    }
+                } else {
+                    plan = `<p class="rank-line">Plano grátis: 1.000 palavras por dia, só livros da biblioteca.</p>
+                            <div class="drawer-actions" style="margin-top:0.8rem"><button type="button" class="pill-btn pill-primary" data-action="upgrade">Assinar Pro a partir de R$ 5/mês</button></div>`;
+                }
+
+                return top + `
+                    <div class="d-section">
+                        <h3>Hoje</h3>
+                        ${today}
+                        <div class="week-bars" aria-hidden="true">${bars}</div>
+                        <div class="week-labels" aria-hidden="true">${labels}</div>
+                    </div>
+                    <div class="d-section">
+                        <h3>Seu progresso</h3>
+                        <div class="stat-grid">${tiles}</div>
+                    </div>
+                    <div class="d-section">
+                        <h3>Ranking</h3>
+                        <p class="rank-line">${rank}</p>
+                        <button type="button" class="link-btn" data-action="leaderboard">Ver ranking completo</button>
+                    </div>
+                    <div class="d-section">
+                        <h3>Assinatura</h3>
+                        ${plan}
+                    </div>
+                    ${d.is_admin ? `<div class="d-section"><h3>Biblioteca</h3>${this.adminHtml()}</div>` : ''}
+                    <div class="d-section">
+                        <div class="drawer-actions"><button type="button" class="pill-btn pill-quiet" data-action="logout">Sair da conta</button></div>
+                    </div>`;
+            }
+
+            leaderboardHtml() {
+                const tabs = [['week', 'Semana'], ['month', 'Mês'], ['all', 'Geral']].map(([k, l]) =>
+                    `<button type="button" class="mode-btn ${this.leaderPeriod === k ? 'active' : ''}" data-action="period" data-period="${k}">${l}</button>`).join('');
+                const top = `
+                    <div class="drawer-top">
+                        <button type="button" class="back-btn" data-action="profile">← Perfil</button>
+                        <button type="button" class="icon-btn" data-action="close" aria-label="Fechar perfil">×</button>
+                    </div>
+                    <h3 class="drawer-heading">Ranking de leitura</h3>
+                    <div class="mode-toggle leader-tabs" role="group" aria-label="Período">${tabs}</div>`;
+                const d = this.leaderData;
+                if (!d || d.period !== this.leaderPeriod) return top + '<p class="today-sub">Carregando…</p>';
+                if (!d.entries.length) return top + '<p class="rank-line">Ninguém leu neste período ainda. Leia agora e comece no topo.</p>';
+                const row = (e) => `<li class="${e.is_me ? 'me' : ''}">
+                        <span class="pos">${e.rank}º</span>
+                        <span aria-hidden="true">${this.flag(e.country)}</span>
+                        <span>${this.esc(e.name)}${e.is_me ? ' (você)' : ''}</span>
+                        <span class="words">${this.fmt(e.words)}</span>
+                    </li>`;
+                let html = `<ol class="leader-list">${d.entries.map(row).join('')}</ol>`;
+                if (d.me && !d.entries.some(e => e.is_me)) html += `<ol class="leader-list" style="margin-top:0.75rem">${row(d.me)}</ol>`;
+                return top + html + '<p class="admin-note">Contagem de palavras lidas no período.</p>';
+            }
+
+            async loadLeaderboard() {
+                const period = this.leaderPeriod;
+                try {
+                    const d = await this.auth.get(`/user/leaderboard?period=${period}`);
+                    if (period === this.leaderPeriod) { this.leaderData = d; this.renderDrawer(); }
+                } catch (e) {
+                    this.showStatus(`Não deu para carregar o ranking: ${e.message}`, 'error');
+                }
+            }
+
+            adminHtml() {
+                const a = this.adminStatus;
+                if (!a) return '<p class="today-sub">Carregando o estado do catálogo…</p>';
+                const by = a.by_source || {};
+                const line = (src) => {
+                    const x = by[src];
+                    const last = (a.last || {})[src];
+                    let t = `<li><strong>${this.esc(this.sourceName(src))}:</strong> `;
+                    t += x ? `${this.fmt(x.total)} livros, ${this.fmt(x.parsed)} prontos para abrir na hora` : 'nenhum livro';
+                    if (last && last.error) t += `. Última importação falhou: ${this.esc(last.error)}`;
+                    return t + '</li>';
+                };
+                const busy = a.running ? 'disabled' : '';
+                const running = a.running
+                    ? `<p class="admin-note">Importando agora: ${this.esc(this.sourceName(a.current) || 'preparando')}${a.queue && a.queue.length ? `. Na fila: ${a.queue.map(s => this.esc(this.sourceName(s))).join(', ')}` : ''}.</p>`
+                    : '';
+                return `<ul class="admin-list">${['wikisource', 'dominiopublico', 'gutenberg'].map(line).join('')}</ul>
+                    <div class="drawer-actions">
+                        <button type="button" class="pill-btn pill-quiet" data-action="import" data-sources="dominiopublico" ${busy}>Importar Domínio Público</button>
+                        <button type="button" class="pill-btn pill-quiet" data-action="import" data-sources="gutenberg,wikisource,dominiopublico" ${busy}>Atualizar todas as fontes</button>
+                    </div>
+                    ${running}
+                    <p class="admin-note">Só administradores veem esta seção. O Domínio Público é lido página por página no site do MEC e leva de 10 a 20 minutos.</p>`;
+            }
+
+            async loadAdminStatus() {
+                try {
+                    this.adminStatus = await this.auth.get('/admin/catalog/status');
+                    this.renderDrawer();
+                    if (this.adminStatus.running) this.watchAdminStatus();
+                } catch (e) {
+                    console.error('admin status', e);
+                }
+            }
+
+            watchAdminStatus() {
+                if (this._adminPoll) return;
+                this._adminPoll = setInterval(async () => {
+                    if (!this.drawer.classList.contains('open')) {
+                        clearInterval(this._adminPoll); this._adminPoll = null; return;
+                    }
+                    await this.loadAdminStatus();
+                    if (this.adminStatus && !this.adminStatus.running) {
+                        clearInterval(this._adminPoll); this._adminPoll = null;
+                        this.homeData = null;
+                        this.loadHome(true);
+                    }
+                }, 4000);
+            }
+
+            async startImport(sources) {
+                try {
+                    this.adminStatus = await this.auth.post('/admin/catalog/import', { sources });
+                    this.showStatus(this.adminStatus.started
+                        ? 'Importação iniciada. O andamento aparece aqui no perfil.'
+                        : (this.adminStatus.message || 'Já existe uma importação rodando.'), 'info');
+                    this.renderDrawer();
+                    this.watchAdminStatus();
+                } catch (e) {
+                    this.showStatus(`Não deu para importar: ${e.message}`, 'error');
+                }
+            }
+
+            async cancelSubscription() {
+                const exp = this.formatDate(this.dashboard && this.dashboard.user.plan_expires_at);
+                if (!confirm(`Cancelar a renovação automática? Você continua Pro até ${exp}.`)) return;
+                try {
+                    await this.auth.post('/billing/cancel');
+                    this.showStatus('Renovação cancelada. Seu Pro continua até o fim do período pago.', 'info');
+                    await this.loadDashboard();
+                } catch (e) {
+                    this.showStatus(`Não deu para cancelar: ${e.message}`, 'error');
+                }
+            }
+
+            onDrawerClick(e) {
+                const el = e.target.closest('[data-action]');
+                if (!el || el.disabled) return;
+                const action = el.dataset.action;
+                if (action === 'close') this.closeDrawer();
+                else if (action === 'logout') { this.closeDrawer(); this.handleLogout(); }
+                else if (action === 'upgrade') { this.closeDrawer(); this.showUpgradeModal(''); }
+                else if (action === 'leaderboard') { this.drawerMode = 'leaderboard'; this.renderDrawer(); this.loadLeaderboard(); }
+                else if (action === 'profile') { this.drawerMode = 'profile'; this.renderDrawer(); }
+                else if (action === 'period') { this.leaderPeriod = el.dataset.period; this.renderDrawer(); this.loadLeaderboard(); }
+                else if (action === 'cancel') this.cancelSubscription();
+                else if (action === 'import') this.startImport(el.dataset.sources.split(','));
+            }
+
+            // ── Hero (deslogado): leitura rápida de verdade, acelerando ───────
+            startHeroDemo() {
+                if (this._heroTimer || this.hero.hidden) return;
+                const words = 'Uma noite destas, vindo da cidade para o Engenho Novo, encontrei no trem da Central um rapaz aqui do bairro, que eu conheço de vista e de chapéu.'.split(' ');
+                const speeds = [250, 350, 450, 600];
+                let i = 0, round = 0;
+                const step = () => {
+                    const wpm = speeds[round % speeds.length];
+                    if (i < words.length) {
+                        this.heroWord.textContent = words[i++];
+                        this.heroCaption.textContent = `Você está lendo a ${wpm} palavras por minuto`;
+                        this._heroTimer = setTimeout(step, 60000 / wpm);
+                    } else {
+                        const last = round % speeds.length === speeds.length - 1;
+                        this.heroWord.textContent = last ? `${wpm} WPM` : 'Mais rápido?';
+                        this.heroCaption.textContent = last
+                            ? 'Trecho de Dom Casmurro, de Machado de Assis. Até onde você vai?'
+                            : 'Trecho de Dom Casmurro, de Machado de Assis.';
+                        i = 0;
+                        round++;
+                        this._heroTimer = setTimeout(step, last ? 2600 : 1400);
+                    }
+                };
+                step();
+            }
+
+            stopHeroDemo() {
+                clearTimeout(this._heroTimer);
+                this._heroTimer = null;
+            }
+
             togglePlayPause() {
                 if (this.isPlaying) {
                     this.pause();
@@ -2080,7 +3117,7 @@
                 // per-tick input events on the slider (which call pause()) would
                 // fire one save PER drag tick — tons of wasted network.
                 if (wasPlaying && this.auth.isAuthenticated() && this.words.length > 0) {
-                    this.saveProgress();
+                    this._lastSave = this.saveProgress();
                 }
             }
             
@@ -2097,7 +3134,7 @@
                 }
             }
             
-            clear() {
+            clear(silent = false) {
                 this.pause();
                 this.stopAutoSave();
                 this.words = [];
@@ -2114,11 +3151,12 @@
                 this.updateProgress();
                 this.hideChapterSelector();
                 this.fileInput.value = '';
-                
-                // Reset upload bar
-                this.uploadIcon.textContent = '📖';
-                this.updateAuthUI();
-                this.showStatus('Livro fechado. Escolha outro na biblioteca.', 'info');
+                this.currentBook = null;
+                this.readerTitle.textContent = '';
+                this.readerAuthor.textContent = '';
+                document.title = 'Speed Reader';
+                if (!this.readerView.hidden) this.showHome();
+                if (!silent) this.showStatus('Livro fechado.', 'info');
             }
             
             /**
@@ -2412,7 +3450,6 @@
             initAuthUI() {
                 // Auth button click
                 this.authBtn.addEventListener('click', () => this.showAuthModal());
-                this.logoutBtn.addEventListener('click', () => this.handleLogout());
                 
                 // Modal close
                 this.modalClose.addEventListener('click', () => this.hideAuthModal());
@@ -2429,44 +3466,42 @@
                 this.registerForm.addEventListener('submit', (e) => this.handleRegister(e));
             }
             
-            /** Called once auth state is known (page load, login, register, logout). */
+            /** Chamado quando o estado de login muda (carregar página, entrar, criar conta, sair). */
             async onAuthReady() {
                 this.updateAuthUI();
                 if (this.auth.isAuthenticated()) {
                     await this.refreshQuota();
-                    this.refreshRank();
-                    this.updateAuthUI();   // now plan-aware
-                    this.library.style.display = 'block';
-                    this.loadLibrary();
+                    this.updateAuthUI();   // agora sabe se é Pro
+                    this.loadHome(true);
                 } else {
-                    this.quota = null; this.rank = null;
-                    this.library.style.display = 'none';
+                    this.quota = null;
+                    this.dashboard = null;
+                    this.homeData = null;
                     this.renderStats();
+                    this.closeDrawer();
+                    if (!this.readerView.hidden) this.showHome();
                 }
             }
             
             updateAuthUI() {
-                if (this.auth.isAuthenticated() && this.auth.user) {
-                    this.authBtn.style.display = 'none';
-                    this.userMenu.style.display = 'flex';
-                    this.userInfo.textContent = (this.isPro() ? '★ ' : '') + this.auth.user.email;
-                    
-                    if (!this.currentBookTitle) {
-                        if (this.isPro()) {
-                            this.uploadText.innerHTML = 'Suba seu próprio livro <span class="pro-tag">PRO</span>';
-                            this.uploadHint.textContent = 'TXT, PDF, EPUB ou MOBI — arraste aqui ou toque';
-                        } else {
-                            this.uploadText.innerHTML = 'Subir meu próprio livro <span class="pro-tag">PRO</span>';
-                            this.uploadHint.textContent = 'PDF e EPUB próprios são do plano Pro · R$ 5/mês no anual';
-                        }
-                    }
-                    this.uploadArea.classList.remove('disabled');
+                const logged = !!(this.auth.isAuthenticated() && this.auth.user);
+                this.authBtn.style.display = logged ? 'none' : '';
+                this.avatarBtn.style.display = logged ? '' : 'none';
+                this.hero.hidden = logged;
+                this.library.hidden = !logged;
+                if (logged) {
+                    const u = this.auth.user;
+                    const name = this.displayName(u);
+                    const pro = this.isPro();
+                    this.avatarInitial.textContent = name.charAt(0).toUpperCase();
+                    this.avatarBtn.classList.toggle('is-pro', pro);
+                    this.avatarBadge.hidden = !pro;
+                    this.avatarBtn.setAttribute('aria-label', `Abrir perfil de ${name}${pro ? ' (Pro)' : ''}`);
+                    this.uploadHint.hidden = pro;
+                    this.uploadArea.setAttribute('aria-label', pro ? 'Subir seu PDF ou EPUB' : 'Subir seu PDF ou EPUB (exclusivo do Pro)');
+                    this.stopHeroDemo();
                 } else {
-                    this.authBtn.style.display = 'block';
-                    this.userMenu.style.display = 'none';
-                    this.uploadText.textContent = 'Entre para começar a ler';
-                    this.uploadHint.textContent = 'Conta grátis: 1.000 palavras por dia da biblioteca';
-                    this.uploadArea.classList.add('disabled');
+                    this.startHeroDemo();
                 }
             }
             
@@ -2509,7 +3544,7 @@
                     
                     await this.auth.login(email, password);
                     this.hideAuthModal();
-                    this.showStatus('✅ Bem-vindo de volta!', 'info');
+                    this.showStatus('Bem-vindo de volta.', 'info');
                     await this.onAuthReady();
                 } catch (error) {
                     this.authError.textContent = error.message;
@@ -2535,7 +3570,7 @@
                     
                     await this.auth.register(email, password, fullName || null, country);
                     this.hideAuthModal();
-                    this.showStatus('✅ Conta criada! Escolha um livro na biblioteca.', 'info');
+                    this.showStatus('Conta criada. Escolha um livro para começar.', 'info');
                     await this.onAuthReady();
                 } catch (error) {
                     this.authError.textContent = error.message;
@@ -2548,9 +3583,9 @@
             
             handleLogout() {
                 this.auth.logout();
-                this.clear();
+                this.clear(true);
                 this.onAuthReady();
-                this.showStatus('Até logo!', 'info');
+                this.showStatus('Você saiu da conta.', 'info');
             }
             
             async loadUserSessions() {
@@ -2600,7 +3635,7 @@
                     if (delta > 0) {
                         // Server is the source of truth for the daily count
                         await this.refreshQuota();
-                        this.refreshRank();
+                        if (this.drawer.classList.contains('open')) this.loadDashboard();
                     }
                 } catch (error) {
                     // Network/server error: we've already zeroed the counter, so those
