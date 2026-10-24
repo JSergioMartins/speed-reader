@@ -129,6 +129,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;   /* celular: sem o clarão azul a cada toque */
         }
         
         body {
@@ -355,6 +356,16 @@
             font-weight: 600;
             flex-shrink: 0;
         }
+        /* Escolhendo palavra para o dicionário (pausado): sublinhado não muda a largura */
+        .rolling-word.is-selected {
+            color: var(--accent);
+            text-decoration: underline;
+            text-decoration-thickness: 3px;
+            text-underline-offset: 0.22em;
+        }
+        body:not(.rolling-mode) #word-display, .rolling-word { cursor: pointer; }
+        /* toque no texto = pausar/significado: não seleciona texto nem abre o menu do celular */
+        #word-display, #rolling-display { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
         
         /* ── Reading Mode Toggle (segmented control) ────────────────────── */
         .mode-toggle {
@@ -697,8 +708,48 @@
             font-size: 0.875rem;
             color: var(--text-secondary);
             text-align: center;
+        }
+        /* Contador com setas palavra a palavra + significado (dicionário) */
+        .progress-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem 0.75rem;
+            flex-wrap: wrap;
             margin-top: 0.5rem;
         }
+        .step-btn {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border-radius: 50%;
+            border: 1px solid var(--line);
+            background: var(--bg-medium);
+            color: var(--text-primary);
+            font-size: 1.15rem;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .step-btn::before, .dict-btn::before { content: none; }
+        .step-btn:hover { border-color: var(--accent); }
+        .dict-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.95rem;
+            border-radius: 999px;
+            border: 1px solid var(--accent);
+            background: transparent;
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .dict-btn:hover { background: var(--bg-medium); }
+        .dict-btn .pro-tag { background: var(--gold); color: #2b1d00; font-size: 0.6rem; padding: 1px 5px; border-radius: 5px; }
         
         /* Auth Modal */
         .modal {
@@ -968,6 +1019,7 @@
         .shelf-count { font-size: 0.95rem; color: var(--text-secondary); white-space: nowrap; }
         .shelf-track {
             display: flex;
+            align-items: flex-start;   /* botão centraliza o conteúdo: sem isto, card com menos texto desce */
             gap: 1.1rem;
             overflow-x: auto;
             scroll-snap-type: x proximity;
@@ -1094,6 +1146,7 @@
         .results-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+            align-items: start;
             gap: 1.4rem 1.1rem;
         }
         .results-grid .book { width: auto; }
@@ -1119,6 +1172,66 @@
             padding: 0.6rem 1.6rem;
         }
         .more-btn::before { content: none; }
+        .book-tags {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.02em;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Filtros (forma, escola, época / gênero, época) */
+        .filter-bar { margin: -1.1rem 0 1.8rem; }
+        .filter-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+        .filter-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.9rem;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: var(--bg-medium);
+            color: var(--text-primary);
+            font-family: 'Crimson Pro', serif;
+            font-size: 1rem;
+            text-transform: none;
+            letter-spacing: 0;
+            white-space: nowrap;
+        }
+        .filter-pill::before { content: none; }
+        .filter-pill:hover, .filter-pill.open { border-color: var(--accent); }
+        .filter-pill.set { background: var(--accent); border-color: var(--accent); color: var(--bg-dark); }
+        .filter-pill .caret { font-size: 0.7rem; opacity: 0.7; }
+        .filter-pill.clear { background: transparent; border-color: transparent; color: var(--accent); padding-left: 0.4rem; }
+        .filter-panel {
+            margin-top: 0.75rem;
+            padding: 0.9rem;
+            border: 1px solid var(--line);
+            border-radius: 1rem;
+            background: var(--sheet);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .filter-option {
+            padding: 0.4rem 0.8rem;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: transparent;
+            color: var(--text-primary);
+            font-family: 'Crimson Pro', serif;
+            font-size: 1rem;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .filter-option::before { content: none; }
+        .filter-option:hover { border-color: var(--accent); }
+        .filter-option.active { background: var(--accent); border-color: var(--accent); color: var(--bg-dark); }
+        .filter-option small { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; opacity: 0.7; margin-left: 0.25rem; }
+        .filter-note { width: 100%; font-size: 0.92rem; color: var(--text-secondary); margin-top: 0.2rem; }
         
         /* ── Hero (deslogado): demonstração ao vivo ──────────────────── */
         .hero {
@@ -1183,6 +1296,35 @@
         .sheet-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
         .sheet-source { margin-top: 1.1rem; font-size: 0.92rem; color: var(--text-secondary); }
         .sheet-source a { color: var(--accent); }
+        .sheet-tags { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-secondary); margin: -0.6rem 0 1.1rem; }
+        
+        /* ── Dicionário ──────────────────────────────────────────────── */
+        .dict-sheet { max-width: 520px; position: relative; }
+        .dict-sheet .modal-close { position: absolute; top: 1rem; right: 1rem; }
+        .dict-word { font-family: 'Crimson Pro', serif; font-size: 2.2rem; font-weight: 600; line-height: 1.1; color: var(--text-primary); padding-right: 2rem; }
+        .dict-lemma { font-size: 1.02rem; color: var(--text-secondary); margin: 0.3rem 0 1rem; min-height: 1.3em; }
+        .dict-lemma strong { color: var(--text-primary); }
+        .dict-body { min-height: 5.6em; }
+        .dict-meaning { font-family: 'Crimson Pro', serif; font-size: 1.3rem; line-height: 1.4; color: var(--text-primary); }
+        .dict-meaning.muted { color: var(--text-secondary); font-style: italic; }
+        .dict-extra { margin-top: 0.7rem; font-size: 1.02rem; line-height: 1.45; color: var(--text-secondary); }
+        .dict-extra span { color: var(--text-primary); font-weight: 600; }
+        .dict-context {
+            margin: 1.1rem 0 0;
+            padding: 0.75rem 0.9rem;
+            border-left: 3px solid var(--accent);
+            background: var(--bg-dark);
+            border-radius: 0 0.6rem 0.6rem 0;
+            font-family: 'Crimson Pro', serif;
+            font-style: italic;
+            font-size: 1.05rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+        .dict-context mark { background: var(--gold-soft); color: var(--text-primary); font-style: normal; border-radius: 3px; padding: 0 2px; }
+        .dict-nav { display: flex; justify-content: space-between; gap: 0.75rem; margin-top: 1.1rem; }
+        .dict-note { margin-top: 0.9rem; font-size: 0.85rem; color: var(--text-secondary); }
+        .dict-retry { margin-top: 0.8rem; }
         
         /* ── Painel do perfil ────────────────────────────────────────── */
         .drawer-backdrop {
@@ -1368,6 +1510,9 @@
             .hero { grid-template-columns: 1fr; gap: 1.5rem; }
             .book-sheet { grid-template-columns: 1fr; }
             .book-sheet .cover { width: 120px; }
+            .filter-pills { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+            .filter-pills::-webkit-scrollbar { display: none; }
+            .dict-word { font-size: 1.9rem; }
 
             .modal-content {
                 padding: 2rem 1.5rem;
@@ -1464,6 +1609,10 @@
                     </button>
                     <input type="file" id="fileInput" accept=".txt,.pdf,.epub,.mobi,.acsm" style="display: none;">
                 </div>
+                <div class="filter-bar" id="filterBar" hidden>
+                    <div class="filter-pills" id="filterPills" role="group" aria-label="Filtros"></div>
+                    <div class="filter-panel" id="filterPanel" hidden></div>
+                </div>
                 <div id="homeRows"></div>
                 <div id="searchResults" hidden></div>
             </div>
@@ -1489,7 +1638,12 @@
             <div class="progress-container">
                 <input type="range" id="progressSlider" min="0" max="1000" value="0" class="progress-slider" aria-label="Posição no livro">
             </div>
-            <div class="progress-info" id="progressInfo">0 / 0 palavras</div>
+            <div class="progress-row">
+                <button type="button" class="step-btn" id="prevWordBtn" aria-label="Palavra anterior" title="Palavra anterior">‹</button>
+                <div class="progress-info" id="progressInfo">0 / 0 palavras</div>
+                <button type="button" class="step-btn" id="nextWordBtn" aria-label="Próxima palavra" title="Próxima palavra">›</button>
+                <button type="button" class="dict-btn" id="dictBtn" aria-label="Significado da palavra">📖 Significado <span class="pro-tag" id="dictHint">PRO</span></button>
+            </div>
             <div class="stats-strip" id="statsStrip" style="display: none;"></div>
             
             <div class="controls">
@@ -1532,6 +1686,11 @@
     <!-- Ficha do livro -->
     <div class="modal" id="bookModal">
         <div class="modal-content book-sheet" id="bookSheet" role="dialog" aria-modal="true"></div>
+    </div>
+    
+    <!-- Dicionário (Pro) -->
+    <div class="modal" id="dictModal">
+        <div class="modal-content dict-sheet" id="dictSheet" role="dialog" aria-modal="true" aria-labelledby="dictWord"></div>
     </div>
     
     <!-- Auth Modal -->
@@ -1627,6 +1786,12 @@
     <script>
         const API_URL = 'https://speed-reader-api-production.up.railway.app';
         const FREE_DAILY_WORDS = 1000;
+        // Filtros por idioma (iguais aos do servidor, catalog_meta.FILTER_GROUPS): as pílulas
+        // aparecem já no 1º quadro, as opções chegam de /catalog/facets — a página não pula.
+        const FILTER_GROUPS = {
+            pt: [['form', 'Forma'], ['school', 'Escola literária'], ['period', 'Época']],
+            en: [['genre', 'Gênero'], ['period', 'Época']],
+        };
 
         // ── AuthManager ───────────────────────────────────────────────────────
         class AuthManager {
@@ -1860,6 +2025,12 @@
                 this.wordsSinceQuota = 0;
                 this.rank = null;
                 this.libLangCode = 'pt';
+                this.filters = {};             // filtros da biblioteca: {form, school, genre, period}
+                this.facets = {};              // /catalog/facets por idioma
+                this.openFilter = null;        // grupo com o painel de opções aberto
+                this._selecting = false;       // escolhendo palavra para o dicionário (setas/toque, pausado)
+                this._dictSeq = 0;             // descarta resposta velha do dicionário
+                this._stepSave = null;
                 this._libTimer = null;
                 
                 // Biblioteca / perfil
@@ -1943,6 +2114,15 @@
                 this.libLang = document.getElementById('libLang');
                 this.homeRows = document.getElementById('homeRows');
                 this.searchResults = document.getElementById('searchResults');
+                this.filterBar = document.getElementById('filterBar');
+                this.filterPills = document.getElementById('filterPills');
+                this.filterPanel = document.getElementById('filterPanel');
+                this.prevWordBtn = document.getElementById('prevWordBtn');
+                this.nextWordBtn = document.getElementById('nextWordBtn');
+                this.dictBtn = document.getElementById('dictBtn');
+                this.dictHint = document.getElementById('dictHint');
+                this.dictModal = document.getElementById('dictModal');
+                this.dictSheet = document.getElementById('dictSheet');
                 this.backBtn = document.getElementById('backBtn');
                 this.readerTitle = document.getElementById('readerTitle');
                 this.readerAuthor = document.getElementById('readerAuthor');
@@ -2057,8 +2237,14 @@
                     if (!btn || btn.dataset.lang === this.libLangCode) return;
                     this.libLangCode = btn.dataset.lang;
                     this.libLang.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b === btn));
-                    if (this.searchQuery) this.runSearch(1); else this.loadHome(true);
+                    // filtros mudam com o idioma (PT: forma, escola, época; EN: gênero, época)
+                    this.filters = {};
+                    this.openFilter = null;
+                    this.loadFacets();
+                    this.applyBrowse(true);
                 });
+                this.filterPills.addEventListener('click', (e) => this.onFilterPill(e));
+                this.filterPanel.addEventListener('click', (e) => this.onFilterOption(e));
                 const onLibraryClick = (e) => {
                     const arrow = e.target.closest('.shelf-arrow');
                     if (arrow) {
@@ -2095,6 +2281,19 @@
                     if (read) this.openBook(this.sheetItem, read);
                 });
                 
+                // Palavra a palavra + dicionário
+                this.prevWordBtn.addEventListener('click', () => this.stepWord(-1));
+                this.nextWordBtn.addEventListener('click', () => this.stepWord(1));
+                this.dictBtn.addEventListener('click', () => this.openDictionary());
+                this.wordDisplay.addEventListener('click', () => this.onReaderTap(null));
+                this.rollingDisplay.addEventListener('click', (e) => this.onReaderTap(e.target.closest('.rolling-word')));
+                this.dictModal.addEventListener('click', (e) => {
+                    if (e.target === this.dictModal || e.target.closest('[data-action="close-dict"]')) { this.closeDictionary(); return; }
+                    const nav = e.target.closest('[data-action="dict-step"]');
+                    if (nav) { this.dictStep(parseInt(nav.dataset.step, 10)); return; }
+                    if (e.target.closest('[data-action="dict-retry"]')) this.lookupWord();
+                });
+                
                 // Hero (deslogado)
                 document.getElementById('heroSignup').addEventListener('click', () => { this.showAuthModal(); this.switchToRegister(); });
                 document.getElementById('heroLogin').addEventListener('click', () => this.showAuthModal());
@@ -2102,7 +2301,8 @@
                 // Esc fecha o que estiver aberto por cima
                 document.addEventListener('keydown', (e) => {
                     if (e.key !== 'Escape') return;
-                    if (this.bookModal.classList.contains('active')) this.closeBookModal();
+                    if (this.dictModal.classList.contains('active')) this.closeDictionary();
+                    else if (this.bookModal.classList.contains('active')) this.closeBookModal();
                     else if (this.drawer.classList.contains('open')) this.closeDrawer();
                     else if (this.upgradeModal.classList.contains('active')) this.upgradeModal.classList.remove('active');
                     else if (this.authModal.classList.contains('active')) this.hideAuthModal();
@@ -2152,6 +2352,10 @@
                     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
                     if (this.authModal.classList.contains('active')) return;
                     if (this.upgradeModal.classList.contains('active')) return;
+                    if (this.dictModal.classList.contains('active')) {   // ← → trocam a palavra do dicionário
+                        if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { e.preventDefault(); this.dictStep(e.code === 'ArrowLeft' ? -1 : 1); }
+                        return;
+                    }
                     if (this.bookModal.classList.contains('active') || this.drawer.classList.contains('open')) return;
                     if (this.readerView.hidden) return;   // atalhos só na tela de leitura
                     
@@ -2300,6 +2504,8 @@
                     this.currentIndex = 0;
                     this.currentSessionId = null;
                     this.rollCenters = null;
+                    this._selecting = false;
+                    this._guessedLang = null;
                     this.currentBookTitle = title;
                     this.currentBookHash = hash;
 
@@ -2462,7 +2668,7 @@
             }
             sourceName(src) {
                 return { wikisource: 'Wikisource', dominiopublico: 'Domínio Público (MEC)',
-                         gutenberg: 'Project Gutenberg' }[src] || src || '';
+                         gutenberg: 'Project Gutenberg', wikidata: 'fichas dos livros (Wikidata)' }[src] || src || '';
             }
             flag(cc) {
                 if (!cc || cc.length !== 2) return '';
@@ -2484,6 +2690,7 @@
             showHome(fromPopState = false) {
                 const wasReader = !this.readerView.hidden;
                 if (this.isPlaying) this.pause();
+                if (this.dictModal.classList.contains('active')) this.closeDictionary();
                 this.readerView.hidden = true;
                 this.homeView.hidden = false;
                 document.title = 'Speed Reader';
@@ -2491,7 +2698,7 @@
                 window.scrollTo(0, 0);
                 // espera o último salvamento para a fileira "Continuar lendo" vir atualizada
                 Promise.resolve(this._lastSave).finally(() => {
-                    if (this.auth.isAuthenticated() && !this.searchQuery) this.loadHome(true);
+                    if (this.auth.isAuthenticated() && !this.browsing()) this.loadHome(true);
                 });
             }
 
@@ -2517,11 +2724,26 @@
                 let meta = '';
                 if (item.progress != null) meta = `${Math.round(item.progress * 100)}% lido`;
                 else if (item.total_words) meta = `${this.formatDuration(item.total_words / this.wpm)} no seu ritmo`;
+                const tags = this.bookTags(item);
                 return `<button type="button" class="book" data-key="${this.esc(key)}"
-                        aria-label="${this.esc(item.title + (author ? ', de ' + author : ''))}">
+                        aria-label="${this.esc(item.title + (author ? ', de ' + author : '') + (tags ? ', ' + tags : ''))}">
                         ${this.coverHtml(item)}
-                        <div class="book-meta">${this.esc(meta)}</div>
+                        <div class="book-meta">${tags ? `<span class="book-tags">${this.esc(tags)}</span>` : ''}${this.esc(meta)}</div>
                     </button>`;
+            }
+
+            /** Card: "1899 · Romance" (PT) / "1897 · Terror" (EN). Ficha (full): ano, forma, escola e gêneros. */
+            bookTags(item, full = false) {
+                const parts = [];
+                if (item.year != null) parts.push(item.year < 0 ? `${-item.year} a.C.` : String(item.year));
+                const genres = item.genres || [];
+                if (full) {
+                    parts.push(...[item.form, item.school, ...genres].filter(Boolean));
+                } else {
+                    const main = item.language === 'pt' ? (item.form || genres[0]) : (genres[0] || item.form);
+                    if (main) parts.push(main.split(' e ')[0]);   // "Mistério e policial" → "Mistério"
+                }
+                return parts.join(' · ');
             }
 
             shelfHtml(row) {
@@ -2556,7 +2778,7 @@
             }
 
             async loadHome(force = false) {
-                if (!this.auth.isAuthenticated() || this.searchQuery) return;
+                if (!this.auth.isAuthenticated() || this.browsing()) return;
                 const lang = this.libLangCode;
                 this.homeCache = this.homeCache || {};
                 const cached = this.homeCache[lang];
@@ -2565,7 +2787,7 @@
                 if (cached && !force) return;
                 try {
                     const d = await this.auth.get(`/catalog/home?lang=${lang}`);
-                    if (lang !== this.libLangCode || this.searchQuery) return;   // trocou de aba ou começou a buscar
+                    if (lang !== this.libLangCode || this.browsing()) return;   // trocou de aba, buscou ou filtrou
                     this.homeCache[lang] = d;
                     this.homeData = d;
                     this.homeLang = lang;
@@ -2619,7 +2841,7 @@
                     if (!this.auth.isAuthenticated()) return stop();
                     try {
                         const st = await this.auth.get('/catalog/status');
-                        if (!st.running) { stop(); this.homeCache = {}; this.loadHome(true); }
+                        if (!st.running) { stop(); this.homeCache = {}; this.facets = {}; this.loadHome(true); this.loadFacets(true); }
                     } catch (e) { /* tenta no próximo ciclo */ }
                 }, 8000);
             }
@@ -2628,10 +2850,19 @@
                 const q = this.libSearch.value.trim();
                 if (q === this.searchQuery) return;
                 this.searchQuery = q;
-                if (!q) {
+                this.applyBrowse();
+            }
+
+            // ── Filtros (PT: forma, escola, época · EN: gênero, época) ────────
+            hasFilters() { return Object.keys(this.filters).length > 0; }
+            browsing() { return !!(this.searchQuery || this.hasFilters()); }
+
+            /** Busca e/ou filtro ativos → grade de resultados; senão → estantes. */
+            applyBrowse(forceHome = false) {
+                if (!this.browsing()) {
                     this.searchResults.hidden = true;
                     this.homeRows.hidden = false;
-                    this.loadHome(false);
+                    this.loadHome(forceHome);
                     return;
                 }
                 this.homeRows.hidden = true;
@@ -2639,9 +2870,95 @@
                 this.runSearch(1);
             }
 
+            async loadFacets(force = false) {
+                const lang = this.libLangCode;
+                if (!this.auth.isAuthenticated()) return;
+                this.renderFilters();      // pílulas na hora; as opções chegam em seguida
+                if (this.facets[lang] && !force) return;
+                try {
+                    const d = await this.auth.get(`/catalog/facets?lang=${lang}`);
+                    this.facets[lang] = d;
+                    if (lang === this.libLangCode) this.renderFilters();
+                } catch (e) { /* sem filtros a biblioteca funciona igual */ }
+            }
+
+            renderFilters() {
+                const lang = this.libLangCode;
+                const f = this.facets[lang];
+                const groups = (FILTER_GROUPS[lang] || FILTER_GROUPS.en).map(([key, label]) => {
+                    const g = f && f.groups.find(x => x.key === key);
+                    return { key, label, options: g ? g.options : [] };
+                });
+                const pills = groups.map(g => {
+                    const sel = this.filters[g.key];
+                    const opt = sel && g.options.find(o => o.key === sel);
+                    const open = this.openFilter === g.key;
+                    const cls = 'filter-pill' + (sel ? ' set' : '') + (open ? ' open' : '');
+                    const inner = opt
+                        ? `${this.esc(opt.label)} <span data-x="1" aria-label="Tirar filtro">×</span>`
+                        : `${this.esc(g.label)} <span class="caret" aria-hidden="true">▾</span>`;
+                    return `<button type="button" class="${cls}" data-group="${this.esc(g.key)}" aria-expanded="${open}">${inner}</button>`;
+                }).join('') + (this.hasFilters() ? '<button type="button" class="filter-pill clear" data-clear="1">Limpar filtros</button>' : '');
+                if (pills !== this._pillsHtml) { this._pillsHtml = pills; this.filterPills.innerHTML = pills; }
+                const g = groups.find(x => x.key === this.openFilter);
+                if (g) {
+                    const sel = this.filters[g.key];
+                    const opts = g.options.map(o => `<button type="button" class="filter-option${o.key === sel ? ' active' : ''}" data-group="${this.esc(g.key)}" data-key="${this.esc(o.key)}" aria-pressed="${o.key === sel}">${this.esc(o.label)}<small>${this.fmt(o.count)}</small></button>`).join('');
+                    let note = '';
+                    if (!f) note = '<p class="filter-note">Carregando as opções…</p>';
+                    else if (f.pending) note = `<p class="filter-note">Ainda completando as fichas de ${this.fmt(f.pending)} livros: os números vão crescer.</p>`;
+                    else if (!g.options.length) note = '<p class="filter-note">Ainda não há livros com essa informação.</p>';
+                    const html = opts + note;
+                    if (html !== this._panelHtml) { this._panelHtml = html; this.filterPanel.innerHTML = html; }
+                    this.filterPanel.hidden = false;
+                } else {
+                    this.filterPanel.hidden = true;
+                }
+                this.filterBar.hidden = false;
+            }
+
+            onFilterPill(e) {
+                const btn = e.target.closest('.filter-pill');
+                if (!btn) return;
+                if (btn.dataset.clear) { this.filters = {}; this.openFilter = null; this.renderFilters(); this.applyBrowse(); return; }
+                const key = btn.dataset.group;
+                if (e.target.closest('[data-x]')) {
+                    delete this.filters[key];
+                    this.openFilter = null;
+                    this.renderFilters();
+                    this.applyBrowse();
+                    return;
+                }
+                this.openFilter = this.openFilter === key ? null : key;
+                this.renderFilters();
+            }
+
+            onFilterOption(e) {
+                const btn = e.target.closest('.filter-option');
+                if (!btn) return;
+                const { group, key } = btn.dataset;
+                if (this.filters[group] === key) delete this.filters[group];
+                else this.filters[group] = key;
+                this.openFilter = null;
+                this.renderFilters();
+                this.applyBrowse();
+            }
+
+            filterLabels() {
+                const f = this.facets[this.libLangCode];
+                return Object.entries(this.filters).map(([g, k]) => {
+                    const grp = f && f.groups.find(x => x.key === g);
+                    const o = grp && grp.options.find(x => x.key === k);
+                    return o ? o.label : k;
+                });
+            }
+
+            searchSig() { return JSON.stringify([this.searchQuery, this.libLangCode, this.filters]); }
+
             async runSearch(page = 1) {
-                const q = this.searchQuery, lang = this.libLangCode;
-                if (!q) return;
+                const q = this.searchQuery, lang = this.libLangCode, filters = { ...this.filters };
+                if (!q && !Object.keys(filters).length) return;
+                const sig = this.searchSig();
                 const showing = this.searchResults.querySelector('.book[data-key]');
                 if (page === 1 && !showing) {
                     const ghost = Array.from({ length: 12 }, () =>
@@ -2650,22 +2967,32 @@
                 }
                 this.searchResults.setAttribute('aria-busy', 'true');
                 try {
-                    const d = await this.auth.get(`/catalog/search?q=${encodeURIComponent(q)}&lang=${lang}&page=${page}`);
-                    if (q !== this.searchQuery || lang !== this.libLangCode) return;   // resposta velha
+                    const params = new URLSearchParams({ q, lang, page: String(page), ...filters });
+                    const d = await this.auth.get(`/catalog/search?${params}`);
+                    if (sig !== this.searchSig()) return;   // resposta velha (mudou busca, idioma ou filtro)
                     this.searchResults.removeAttribute('aria-busy');
                     this.searchPage = page;
                     this.searchItems = page === 1 ? d.items : this.searchItems.concat(d.items);
+                    if (page === 1) this.searchTotal = d.total;
+                    const labels = this.filterLabels();
                     if (!this.searchItems.length) {
-                        this.searchResults.innerHTML = `<p class="home-message">Nada encontrado para “${this.esc(q)}”. Confira a grafia ou busque só pelo sobrenome do autor.</p>`;
+                        this.searchResults.innerHTML = q
+                            ? `<p class="home-message">Nada encontrado para “${this.esc(q)}”${labels.length ? ' com esses filtros' : ''}. Confira a grafia ou busque só pelo sobrenome do autor.</p>`
+                            : '<p class="home-message">Nenhum livro com esses filtros por enquanto.</p>';
                         return;
                     }
                     this.itemIndex.clear();
                     const note = d.note ? `<p class="results-note">${this.esc(d.note)}</p>` : '';
+                    const title = q ? `Resultados para “${this.esc(q)}”` : this.esc(labels.join(' · '));
+                    const count = this.searchTotal != null
+                        ? `<span class="shelf-count">${this.fmt(this.searchTotal)} ${this.searchTotal === 1 ? 'livro' : 'livros'}</span>` : '';
                     this.searchResults.innerHTML = `
-                        <div class="results-head"><h2 class="shelf-title">Resultados para “${this.esc(q)}”</h2>${note}</div>
+                        <div class="results-head"><h2 class="shelf-title">${title}</h2>${count}${note}</div>
                         <div class="results-grid">${this.searchItems.map(i => this.bookCard(i)).join('')}</div>
                         ${d.has_next ? '<button type="button" class="more-btn" data-action="more">Mostrar mais</button>' : ''}`;
                 } catch (e) {
+                    if (sig !== this.searchSig()) return;   // erro de uma busca que já foi trocada
+                    this.searchResults.removeAttribute('aria-busy');
                     this.searchResults.innerHTML = `<p class="home-message">A busca falhou: ${this.esc(e.message)}. Tente de novo.</p>`;
                 }
             }
@@ -2692,6 +3019,7 @@
                     <div>
                         <h2 class="sheet-title" id="sheetTitle">${this.esc(item.title)}</h2>
                         <p class="sheet-author">${this.esc(author || 'Autor desconhecido')}</p>
+                        ${this.bookTags(item, true) ? `<p class="sheet-tags">${this.esc(this.bookTags(item, true))}</p>` : ''}
                         <ul class="sheet-facts">${facts.join('')}</ul>
                         <div class="sheet-actions">
                             <button type="button" class="pill-btn pill-primary" data-action="read" data-key="${this.esc(key)}">${action}</button>
@@ -2903,13 +3231,26 @@
                     return t + '</li>';
                 };
                 const busy = a.running ? 'disabled' : '';
+                const en = a.enrich || {};
+                const prog = a.current === 'wikidata' && en.pending ? ` (${this.fmt(en.done || 0)} de ${this.fmt(en.pending)})` : '';
                 const running = a.running
-                    ? `<p class="admin-note">Importando agora: ${this.esc(this.sourceName(a.current) || 'preparando')}${a.queue && a.queue.length ? `. Na fila: ${a.queue.map(s => this.esc(this.sourceName(s))).join(', ')}` : ''}.</p>`
+                    ? `<p class="admin-note">Importando agora: ${this.esc(this.sourceName(a.current) || 'preparando')}${prog}${a.queue && a.queue.length ? `. Na fila: ${a.queue.map(s => this.esc(this.sourceName(s))).join(', ')}` : ''}.</p>`
                     : '';
-                return `<ul class="admin-list">${['wikisource', 'dominiopublico', 'gutenberg'].map(line).join('')}</ul>
+                const fx = a.fichas || {};
+                const ficha = (lang, name) => {
+                    const x = fx[lang];
+                    if (!x) return '';
+                    const extra = lang === 'pt' ? `${this.fmt(x.school)} com escola` : `${this.fmt(x.genres)} com gênero`;
+                    return `<li><strong>Fichas ${name}:</strong> ${this.fmt(x.year)} com ano, ${this.fmt(x.form)} com forma, ${extra} (de ${this.fmt(x.total)})${x.pending ? `; ${this.fmt(x.pending)} pendentes` : ''}</li>`;
+                };
+                const wdLast = (a.last || {}).wikidata;
+                return `<ul class="admin-list">${['wikisource', 'dominiopublico', 'gutenberg'].map(line).join('')}${ficha('pt', 'em português')}${ficha('en', 'em inglês')}</ul>
+                    ${wdLast && wdLast.error ? `<p class="admin-note">A última rodada das fichas falhou: ${this.esc(wdLast.error)}</p>` : ''}
                     <div class="drawer-actions">
                         <button type="button" class="pill-btn pill-quiet" data-action="import" data-sources="dominiopublico" ${busy}>Importar Domínio Público</button>
                         <button type="button" class="pill-btn pill-quiet" data-action="import" data-sources="gutenberg,wikisource,dominiopublico" ${busy}>Atualizar todas as fontes</button>
+                        <button type="button" class="pill-btn pill-quiet" data-action="import" data-sources="wikidata" ${busy}>Completar fichas</button>
+                        <button type="button" class="pill-btn pill-quiet" data-action="import" data-sources="wikidata" data-force="1" ${busy}>Refazer todas as fichas</button>
                     </div>
                     ${running}
                     <p class="admin-note">Só administradores veem esta seção. O Domínio Público é lido página por página no site do MEC e leva de 10 a 20 minutos.</p>`;
@@ -2935,16 +3276,20 @@
                     if (this.adminStatus && !this.adminStatus.running) {
                         clearInterval(this._adminPoll); this._adminPoll = null;
                         this.homeCache = {};
+                        this.facets = {};
                         this.loadHome(true);
+                        this.loadFacets(true);
                     }
                 }, 4000);
             }
 
-            async startImport(sources) {
+            async startImport(sources, force = false) {
                 try {
-                    this.adminStatus = await this.auth.post('/admin/catalog/import', { sources });
+                    this.adminStatus = await this.auth.post('/admin/catalog/import', { sources, force });
                     this.showStatus(this.adminStatus.started
-                        ? 'Importação iniciada. O andamento aparece aqui no perfil.'
+                        ? (sources.length === 1 && sources[0] === 'wikidata'
+                            ? 'Completando as fichas dos livros. O andamento aparece aqui no perfil.'
+                            : 'Importação iniciada. O andamento aparece aqui no perfil.')
                         : (this.adminStatus.message || 'Já existe uma importação rodando.'), 'info');
                     this.renderDrawer();
                     this.watchAdminStatus();
@@ -2976,7 +3321,7 @@
                 else if (action === 'profile') { this.drawerMode = 'profile'; this.renderDrawer(); }
                 else if (action === 'period') { this.leaderPeriod = el.dataset.period; this.renderDrawer(); this.loadLeaderboard(); }
                 else if (action === 'cancel') this.cancelSubscription();
-                else if (action === 'import') this.startImport(el.dataset.sources.split(','));
+                else if (action === 'import') this.startImport(el.dataset.sources.split(','), el.dataset.force === '1');
             }
 
             // ── Hero (deslogado): leitura rápida de verdade, acelerando ───────
@@ -3032,6 +3377,8 @@
                 }
                 
                 this.isPlaying = true;
+                this._selecting = false;
+                this.markSelected();
                 this.playPauseBtn.innerHTML = '⏸ Pausar';
                 // Lock the progress slider to prevent miss-clicks during playback
                 this.progressSlider.classList.add('locked');
@@ -3223,6 +3570,7 @@
             
             clear(silent = false) {
                 this.pause();
+                if (this.dictModal.classList.contains('active')) this.closeDictionary();
                 this.stopAutoSave();
                 this.words = [];
                 this.chapters = [];
@@ -3266,6 +3614,7 @@
                     } else {
                         this.rollX = this.rollCenters[this.currentIndex - this.rollingWindowStart];
                         this._applyRollTransform();
+                        this.markSelected();
                     }
                 } else {
                     this.displayWord();
@@ -3275,6 +3624,189 @@
             displayWord() {
                 if (this.words.length === 0) return;
                 this.wordDisplay.textContent = this.words[this.currentIndex];
+            }
+            
+            // ── Palavra a palavra + dicionário (Pro) ──────────────────────────
+            /** Setas do contador: anda uma palavra (pausa a leitura). */
+            stepWord(delta) {
+                if (!this.words.length) return;
+                if (this.isPlaying) this.pause();
+                const i = Math.max(0, Math.min(this.words.length - 1, this.currentIndex + delta));
+                this._selecting = true;
+                if (i !== this.currentIndex) {
+                    this.currentIndex = i;
+                    this.updateProgress();
+                    this.updateChapterSelection();
+                    this._queuePositionSave();
+                }
+                this.displayCurrent();
+            }
+            
+            /** Toque no texto: lendo → pausa; pausado → significado (no texto corrido, da palavra tocada). */
+            onReaderTap(span) {
+                if (!this.words.length) return;
+                if (this.isPlaying) { this.pause(); return; }
+                if (span && span.dataset.idx != null) {
+                    const i = parseInt(span.dataset.idx, 10);
+                    if (i !== this.currentIndex && i >= 0 && i < this.words.length) {
+                        this.currentIndex = i;
+                        this.updateProgress();
+                        this.updateChapterSelection();
+                        this._queuePositionSave();
+                    }
+                }
+                this._selecting = true;
+                this.displayCurrent();
+                this.openDictionary();
+            }
+            
+            /** Texto corrido pausado: sublinha a palavra escolhida (não muda a largura → a fita não mexe). */
+            markSelected() {
+                if (!this.rollingRibbon) return;
+                const prev = this.rollingRibbon.querySelector('.is-selected');
+                const want = this._selecting && !this.isPlaying && this.readingMode === 'rolling'
+                    ? this.rollingRibbon.children[this.currentIndex - this.rollingWindowStart] || null : null;
+                if (prev === want) return;
+                if (prev) prev.classList.remove('is-selected');
+                if (want) want.classList.add('is-selected');
+            }
+            
+            _queuePositionSave() {
+                clearTimeout(this._stepSave);
+                this._stepSave = setTimeout(() => {
+                    if (this.auth.isAuthenticated() && this.words.length && !this.isPlaying) this.saveProgress(false);
+                }, 1500);
+            }
+            
+            /** Frase em volta da palavra i (até 40 palavras de cada lado). */
+            sentenceAround(i) {
+                const w = this.words, END = /[.!?…]["'»”’)\]]*$/;
+                let a = i, b = i;
+                while (a > 0 && i - a < 40 && !END.test(w[a - 1])) a--;
+                while (b < w.length - 1 && b - i < 40 && !END.test(w[b])) b++;
+                return { words: w.slice(a, b + 1), at: i - a };
+            }
+            
+            cleanWord(w) {
+                return String(w || '').replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+            }
+            
+            /** Idioma de um arquivo enviado (catálogo já informa). */
+            guessLang() {
+                let en = 0, pt = 0;
+                for (const raw of this.words.slice(0, 3000)) {
+                    const w = raw.toLowerCase();
+                    if (w === 'the' || w === 'and' || w === 'of') en++;
+                    else if (w === 'que' || w === 'de' || w === 'não' || w === 'uma') pt++;
+                }
+                return en > pt ? 'en' : 'pt';
+            }
+            
+            openDictionary() {
+                if (!this.words.length) return;
+                if (this.isPlaying) this.pause();
+                if (!this.isPro()) {
+                    this.showUpgradeModal('O dicionário é exclusivo do Pro: toque numa palavra e veja o que ela quer dizer na frase.');
+                    return;
+                }
+                this._selecting = true;
+                this.markSelected();
+                try { window.getSelection().removeAllRanges(); } catch (e) { /* ok */ }
+                this.dictModal.classList.add('active');
+                this.lookupWord();
+            }
+            
+            closeDictionary() {
+                this.dictModal.classList.remove('active');
+                clearTimeout(this._dictTimer);
+                this._dictSeq++;   // resposta que ainda estiver a caminho é ignorada
+            }
+            
+            /** Setas dentro do dicionário: a palavra troca na hora; a consulta (paga) só sai
+             *  quando a pessoa para de passar (350 ms) — passar 10 palavras rápido = 1 consulta. */
+            dictStep(delta) {
+                const i = Math.max(0, Math.min(this.words.length - 1, this.currentIndex + delta));
+                if (i === this.currentIndex) return;
+                this.currentIndex = i;
+                this.displayCurrent();
+                this.updateProgress();
+                this.updateChapterSelection();
+                this._queuePositionSave();
+                const word = this.cleanWord(this.words[i]);
+                this._dictSeq++;   // descarta resposta da palavra anterior
+                this.renderDict({ word, ctx: this.sentenceAround(i), loading: !!word });
+                clearTimeout(this._dictTimer);
+                if (word) this._dictTimer = setTimeout(() => this.lookupWord(false), 350);
+            }
+            
+            async lookupWord(render = true) {
+                clearTimeout(this._dictTimer);
+                const i = this.currentIndex;
+                const word = this.cleanWord(this.words[i]).slice(0, 60);
+                const ctx = this.sentenceAround(i);
+                const seq = ++this._dictSeq;
+                if (render) this.renderDict({ word, ctx, loading: !!word });
+                if (!word) return;
+                // frase de até 700 caracteres em volta da palavra (PDF às vezes cola palavras)
+                let context = ctx.words.join(' ');
+                if (context.length > 700) {
+                    const start = Math.max(0, ctx.words.slice(0, ctx.at).join(' ').length - 350);
+                    context = context.slice(start, start + 700);
+                }
+                const lang = this.currentBook ? (this.currentBook.language || 'pt') : (this._guessedLang || (this._guessedLang = this.guessLang()));
+                try {
+                    const d = await this.auth.post('/dictionary/define', { word, context, lang });
+                    if (seq !== this._dictSeq) return;
+                    this.renderDict({ word, ctx, data: d });
+                } catch (e) {
+                    if (seq !== this._dictSeq) return;
+                    if (e.status === 402) { this.closeDictionary(); this.showUpgradeModal('O dicionário é exclusivo do Pro.'); return; }
+                    if (e.status === 429) {   // passou palavras rápido demais: tenta de novo em seguida
+                        this._dictTimer = setTimeout(() => { if (seq === this._dictSeq) this.lookupWord(false); }, 800);
+                        return;
+                    }
+                    const msg = e.status === 503 ? 'O dicionário ainda não está ativo no servidor.' : 'Não consegui buscar o significado agora.';
+                    this.renderDict({ word, ctx, error: msg, retry: e.status !== 503 });
+                }
+            }
+            
+            renderDict({ word, ctx, loading, data, error, retry }) {
+                const sentence = ctx.words.map((w, k) => k === ctx.at ? `<mark>${this.esc(w)}</mark>` : this.esc(w)).join(' ');
+                let lemma = '', body;
+                if (!word) {
+                    body = '<p class="dict-meaning muted">Aqui não há palavra para explicar. Use as setas para escolher outra.</p>';
+                } else if (loading) {
+                    body = '<p class="dict-meaning muted">Buscando o significado…</p>';
+                } else if (error) {
+                    body = `<p class="dict-meaning muted">${this.esc(error)}</p>` +
+                        (retry ? '<button type="button" class="pill-btn pill-quiet dict-retry" data-action="dict-retry">Tentar de novo</button>' : '');
+                } else {
+                    const bits = [];
+                    if (data.lemma && data.lemma.toLowerCase() !== word.toLowerCase()) bits.push(`de <strong>${this.esc(data.lemma)}</strong>`);
+                    if (data.part_of_speech) bits.push(this.esc(data.part_of_speech));
+                    lemma = bits.join(' · ');
+                    body = `<p class="dict-meaning">${this.esc(data.meaning)}</p>`;
+                    if (data.translation) body += `<p class="dict-extra"><span>Tradução:</span> ${this.esc(data.translation)}</p>`;
+                    if (data.definition) body += `<p class="dict-extra"><span>Sentido geral:</span> ${this.esc(data.definition)}</p>`;
+                    if (data.modern_spelling) body += `<p class="dict-extra"><span>Hoje se escreve:</span> ${this.esc(data.modern_spelling)}</p>`;
+                }
+                const focused = document.activeElement && this.dictSheet.contains(document.activeElement) ? document.activeElement.dataset.step : null;
+                const atStart = this.currentIndex <= 0, atEnd = this.currentIndex >= this.words.length - 1;
+                this.dictSheet.innerHTML = `
+                    <button type="button" class="modal-close" data-action="close-dict" aria-label="Fechar">×</button>
+                    <p class="dict-word" id="dictWord">${this.esc(word || this.words[this.currentIndex] || '')}</p>
+                    <p class="dict-lemma">${lemma}</p>
+                    <div class="dict-body" aria-live="polite">${body}</div>
+                    <blockquote class="dict-context">${sentence}</blockquote>
+                    <div class="dict-nav">
+                        <button type="button" class="pill-btn pill-quiet" data-action="dict-step" data-step="-1" ${atStart ? 'disabled' : ''}>‹ Anterior</button>
+                        <button type="button" class="pill-btn pill-quiet" data-action="dict-step" data-step="1" ${atEnd ? 'disabled' : ''}>Próxima ›</button>
+                    </div>
+                    <p class="dict-note">Explicado por IA a partir da frase do livro. Pode conter erros.</p>`;
+                if (focused) {
+                    const again = this.dictSheet.querySelector(`[data-step="${focused}"]`);
+                    if (again && !again.disabled) again.focus();
+                }
             }
             
             // ── Rolling mode ──────────────────────────────────────────────────
@@ -3330,6 +3862,7 @@
                 
                 this.rollX = centers[this.currentIndex - start] + frac;
                 this._applyRollTransform();
+                this.markSelected();
             }
             
             // ── Reading mode switching ────────────────────────────────────────
@@ -3563,6 +4096,7 @@
                 this.updateAuthUI();
                 if (this.auth.isAuthenticated()) {
                     this.loadHome(true);           // em paralelo com a cota: não espera uma pela outra
+                    this.loadFacets();
                     await this.refreshQuota();
                     this.updateAuthUI();           // confirma o plano pela cota (normalmente nada muda)
                 } else {
@@ -3571,6 +4105,10 @@
                     this.homeData = null;
                     this.homeCache = {};
                     this._homeSig = null;
+                    this.filters = {};
+                    this.facets = {};
+                    this.openFilter = null;
+                    this.filterBar.hidden = true;
                     this.renderStats();
                     this.closeDrawer();
                     if (!this.readerView.hidden) this.showHome();
@@ -3592,6 +4130,7 @@
                     this.avatarBadge.hidden = !pro;
                     this.avatarBtn.setAttribute('aria-label', `Abrir perfil de ${name}${pro ? ' (Pro)' : ''}`);
                     this.uploadHint.hidden = pro;
+                    this.dictHint.hidden = pro;
                     this.uploadArea.setAttribute('aria-label', pro ? 'Subir seu PDF ou EPUB' : 'Subir seu PDF ou EPUB (exclusivo do Pro)');
                     this.stopHeroDemo();
                 } else {
